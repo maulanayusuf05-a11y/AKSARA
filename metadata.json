@@ -1,0 +1,6 @@
+{
+  "name": "EduUjian SD - Platform Ujian Digital Multi-Tenant",
+  "description": "Platform Ujian Digital Multi-Tenant khusus Sekolah Dasar di Indonesia dengan isolasi data per sekolah, manajemen 4 peran, bank soal, dan pemantauan real-time.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
