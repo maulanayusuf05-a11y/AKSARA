@@ -268,6 +268,59 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               </button>
             </div>
 
+            {/* Quick 1-Click Login for Testing */}
+            <div className="mt-4 pt-3 border-t border-dashed border-slate-200">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2">
+                Akses Uji Coba (1-Klik Langsung Masuk)
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIdentifier('superadmin');
+                    setPassword('password123');
+                    login('superadmin', 'password123');
+                  }}
+                  className="px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold text-center transition"
+                >
+                  👑 Super Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIdentifier('admin.sdn01@jakarta.sekolah.id');
+                    setPassword('password123');
+                    login('admin.sdn01@jakarta.sekolah.id', 'password123');
+                  }}
+                  className="px-2 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold text-center transition"
+                >
+                  🏫 Admin Sekolah
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIdentifier('proktor1@sdn01menteng.sch.id');
+                    setPassword('password123');
+                    login('proktor1@sdn01menteng.sch.id', 'password123');
+                  }}
+                  className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-bold text-center transition"
+                >
+                  🎧 Proktor Lab
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIdentifier('0123456781');
+                    setPassword('password123');
+                    login('0123456781', 'password123');
+                  }}
+                  className="px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold text-center transition"
+                >
+                  🎒 Siswa Peserta
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
 

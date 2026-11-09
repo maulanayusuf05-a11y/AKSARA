@@ -78,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
   const navItems = renderNavItems();
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 min-h-[calc(100vh-4rem)] border-r border-slate-800">
+    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 min-h-[calc(100vh-4rem)] border-r border-slate-800 overflow-x-hidden no-scrollbar">
       {/* Role Title in Sidebar */}
       <div className="p-4 border-b border-slate-800">
         <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -101,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       </div>
 
       {/* Nav Link List */}
-      <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
+      <nav className="p-3 space-y-1 flex-1 overflow-x-hidden overflow-y-auto no-scrollbar">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;

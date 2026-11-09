@@ -7,7 +7,8 @@ import { SqlSchemaViewerModal } from './components/common/SqlSchemaViewerModal';
 import { LoginPage } from './components/auth/LoginPage';
 import { RegisterSchoolPage } from './components/auth/RegisterSchoolPage';
 import { ForgotPasswordModal } from './components/auth/ForgotPasswordModal';
-import { SuperAdminDashboard } from './components/dashboards/SuperAdminDashboard';
+import { SuperAdminPortal } from './components/superadmin/SuperAdminPortal';
+import { SchoolAdminPortal } from './components/schooladmin/SchoolAdminPortal';
 import { SchoolAdminDashboard } from './components/dashboards/SchoolAdminDashboard';
 import { ProctorDashboard } from './components/dashboards/ProctorDashboard';
 import { StudentDashboard } from './components/dashboards/StudentDashboard';
@@ -66,7 +67,41 @@ const MainAppContent: React.FC = () => {
     );
   }
 
-  // Logged In: Show Multi-Tenant Application Layout
+  // Khusus Super Admin: Render Dedicated Kemdikbud TKA Portal Layout matching uploaded screenshot
+  if (role === 'super_admin') {
+    return (
+      <>
+        <SuperAdminPortal onOpenSqlModal={() => setShowSqlModal(true)} />
+        <SqlSchemaViewerModal
+          isOpen={showSqlModal}
+          onClose={() => setShowSqlModal(false)}
+        />
+        <ForgotPasswordModal
+          isOpen={showForgotModal}
+          onClose={() => setShowForgotModal(false)}
+        />
+      </>
+    );
+  }
+
+  // Khusus Admin Sekolah: Render Dedicated School Admin Portal Layout matching Super Admin
+  if (role === 'school_admin') {
+    return (
+      <>
+        <SchoolAdminPortal onOpenSqlModal={() => setShowSqlModal(true)} />
+        <SqlSchemaViewerModal
+          isOpen={showSqlModal}
+          onClose={() => setShowSqlModal(false)}
+        />
+        <ForgotPasswordModal
+          isOpen={showForgotModal}
+          onClose={() => setShowForgotModal(false)}
+        />
+      </>
+    );
+  }
+
+  // Logged In: Show Multi-Tenant Application Layout for Proctor and Student
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900">
       {/* Top Banner & Status */}
@@ -82,17 +117,6 @@ const MainAppContent: React.FC = () => {
 
         {/* Main Role-Specific View */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          {role === 'super_admin' && (
-            <SuperAdminDashboard
-              activeTab={activeTab}
-              onOpenSqlModal={() => setShowSqlModal(true)}
-            />
-          )}
-
-          {role === 'school_admin' && (
-            <SchoolAdminDashboard activeTab={activeTab} />
-          )}
-
           {role === 'proctor' && (
             <ProctorDashboard activeTab={activeTab} />
           )}
