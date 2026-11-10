@@ -5,6 +5,13 @@ import { tenantStore } from '../../lib/supabase';
 import { tkaStore, DOWNLOAD_FILES } from '../../lib/tkaStore';
 import { DownloadableFile, Announcement, HelpdeskTicket } from '../../types/tka';
 import { ClassRoom, Student, Proctor, Subject, QuestionBank, Exam, ExamToken } from '../../types/database';
+import { SchoolDataMasterView } from './views/SchoolDataMasterView';
+import { SchoolDataPesertaView } from './views/SchoolDataPesertaView';
+import { SchoolRekapLaporanView } from './views/SchoolRekapLaporanView';
+import { SchoolBlankSpotView } from './views/SchoolBlankSpotView';
+import { SchoolAdministrasiTesView } from './views/SchoolAdministrasiTesView';
+import { SchoolSimulasiView } from './views/SchoolSimulasiView';
+import { SchoolMultiTenantView } from './views/SchoolMultiTenantView';
 import {
   Menu,
   ChevronDown,
@@ -74,6 +81,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
     blankspot: false,
     administrasi: false,
     simulasi: false,
+    multitenant: false,
     sync: true, // open by default so user sees bidirectional sync
     pengguna: false,
   });
@@ -349,53 +357,55 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT SIDEBAR: Hilangkan scroll ke samping dan atas-bawah (overflow-x-hidden no-scrollbar) */}
         {sidebarOpen && (
-          <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar max-h-[calc(100vh-3.5rem)] select-none">
+          <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar max-h-[calc(100vh-3.5rem)] select-none">
             {/* Logo & Kemdikbud Header matching screenshot */}
             <div className="p-4 flex flex-col items-center text-center border-b border-slate-100">
-              <TutWuriLogo size={52} className="mb-2" />
-              <div className="font-extrabold text-[12px] tracking-tight text-slate-800 uppercase leading-snug">
-                TES KEMAMPUAN AKADEMIK
+              <TutWuriLogo size={52} className="mb-2 shrink-0" />
+              <div className="font-black text-[14px] tracking-wide text-slate-800 uppercase leading-snug break-words">
+                AKSARA
               </div>
-              <div className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase mt-0.5">
-                PUSAT ASESMEN PENDIDIKAN
+              <div className="text-[10px] font-semibold text-slate-500 leading-tight mt-0.5 max-w-[240px]">
+                Asesmen dan Kompetensi Siswa Terarah
               </div>
-              <div className="mt-1 px-2 py-0.5 bg-blue-50 border border-blue-200 rounded text-[10px] text-blue-700 font-bold truncate max-w-[220px]">
+              <div className="mt-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-md text-[10.5px] text-blue-800 font-bold text-center break-words leading-tight w-full max-w-[250px]">
                 {currentSchool?.name || 'SDN 01 Menteng'}
               </div>
             </div>
 
             {/* Dark Blue 3-Action Sub-Bar: [Dashboard] [Pengaturan] [Keluar] */}
-            <div className="bg-[#1b365d] text-white px-2 py-2 flex items-center justify-around text-[11px] font-medium border-b border-slate-900">
+            <div className="bg-[#1b365d] text-white px-2 py-2 grid grid-cols-3 gap-1 text-[11px] font-medium border-b border-slate-900">
               <button
                 onClick={() => navigateTo('dashboard')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded transition ${
+                className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded transition whitespace-nowrap ${
                   activeMenu === 'dashboard'
                     ? 'bg-[#294c7a] font-bold text-white shadow-xs'
                     : 'text-slate-200 hover:bg-[#23426b]'
                 }`}
+                title="Menuju Dashboard"
               >
-                <Home className="w-3.5 h-3.5" />
+                <Home className="w-3.5 h-3.5 shrink-0" />
                 <span>Dashboard</span>
               </button>
 
               <button
                 onClick={() => navigateTo('pengaturan_akun')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded transition ${
+                className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded transition whitespace-nowrap ${
                   activeMenu === 'pengaturan_akun'
                     ? 'bg-[#294c7a] font-bold text-white shadow-xs'
                     : 'text-slate-200 hover:bg-[#23426b]'
                 }`}
+                title="Pengaturan Akun"
               >
-                <Settings className="w-3.5 h-3.5" />
+                <Settings className="w-3.5 h-3.5 shrink-0" />
                 <span>Pengaturan</span>
               </button>
 
               <button
                 onClick={logout}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-slate-200 hover:text-red-300 hover:bg-[#23426b] transition"
+                className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-slate-200 hover:text-red-300 hover:bg-[#23426b] transition whitespace-nowrap"
                 title="Keluar dari Portal"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 shrink-0" />
                 <span>Keluar</span>
               </button>
             </div>
@@ -416,108 +426,98 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <LayoutDashboard className="w-4 h-4 text-slate-500" />
-                  <span>Dashboard</span>
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <LayoutDashboard className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Dashboard</span>
                 </div>
               </button>
 
-              {/* 2. Data Master Sekolah */}
+              {/* 2. Data Master */}
               <div>
                 <button
                   onClick={() => toggleSection('master')}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <FolderOpen className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium">Data Master Sekolah</span>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <FolderOpen className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="font-medium leading-snug break-words">Data Master</span>
                   </div>
                   {openSections.master ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   )}
                 </button>
 
                 {openSections.master && (
-                  <div className="pl-8 pr-2 py-1 space-y-1 text-[11px]">
+                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
                     <button
-                      onClick={() => navigateTo('master', 'profile')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
-                        activeMenu === 'master' && activeSubMenu === 'profile'
+                      onClick={() => navigateTo('master', 'schools')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'master' && (activeSubMenu === 'schools' || activeSubMenu === 'profile')
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Profil Sekolah & NPSN
-                    </button>
-                    <button
-                      onClick={() => navigateTo('master', 'classes')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
-                        activeMenu === 'master' && activeSubMenu === 'classes'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Data Kelas (1-6 SD)
+                      Satuan Pendidikan
                     </button>
                     <button
                       onClick={() => navigateTo('master', 'subjects')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'master' && activeSubMenu === 'subjects'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Mata Pelajaran Ujian
+                      Mata Pelajaran
                     </button>
                     <button
                       onClick={() => navigateTo('master', 'banks')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'master' && activeSubMenu === 'banks'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Bank Soal (Nasional & Mandiri)
+                      Bank Soal
                     </button>
                     <button
-                      onClick={() => navigateTo('master', 'proctors')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
-                        activeMenu === 'master' && activeSubMenu === 'proctors'
+                      onClick={() => navigateTo('master', 'sarpras')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'master' && activeSubMenu === 'sarpras'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Data Guru / Pengawas
+                      Sarpras / Laboratorium
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* 3. Data Peserta Sekolah */}
+              {/* 3. Data Peserta */}
               <div>
                 <button
                   onClick={() => toggleSection('peserta')}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Users className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium">Data Peserta Didik</span>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <Users className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="font-medium leading-snug break-words">Data Peserta</span>
                   </div>
                   {openSections.peserta ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   )}
                 </button>
 
                 {openSections.peserta && (
-                  <div className="pl-8 pr-2 py-1 space-y-1 text-[11px]">
+                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
                     <button
-                      onClick={() => navigateTo('peserta', 'list')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
-                        activeMenu === 'peserta' && activeSubMenu === 'list'
+                      onClick={() => navigateTo('peserta', 'peserta')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'peserta' && (activeSubMenu === 'peserta' || activeSubMenu === 'list')
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
@@ -525,24 +525,34 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                       Peserta Didik ({students.length})
                     </button>
                     <button
+                      onClick={() => navigateTo('peserta', 'generate')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'peserta' && activeSubMenu === 'generate'
+                          ? 'text-blue-700 font-bold bg-blue-50'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Generate Nomor Peserta
+                    </button>
+                    <button
                       onClick={() => navigateTo('peserta', 'kartu')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'peserta' && activeSubMenu === 'kartu'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Cetak Kartu Login Ujian
+                      Cetak Kartu Login Peserta
                     </button>
                     <button
                       onClick={() => navigateTo('peserta', 'dnt')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'peserta' && activeSubMenu === 'dnt'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Daftar Nominasi Tetap (DNT)
+                      Rekap DNT
                     </button>
                   </div>
                 )}
@@ -554,42 +564,42 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   onClick={() => toggleSection('rekap')}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <BarChart2 className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium">Rekap dan Laporan</span>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <BarChart2 className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="font-medium leading-snug break-words">Rekap dan Laporan</span>
                   </div>
                   {openSections.rekap ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   )}
                 </button>
 
                 {openSections.rekap && (
-                  <div className="pl-8 pr-2 py-1 space-y-1 text-[11px]">
+                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
                     <button
                       onClick={() => navigateTo('rekap', 'kehadiran')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'rekap' && activeSubMenu === 'kehadiran'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Presensi Kehadiran Ujian
+                      Rekap Kehadiran
                     </button>
                     <button
                       onClick={() => navigateTo('rekap', 'laporan')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'rekap' && activeSubMenu === 'laporan'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Hasil & Nilai Ujian Siswa
+                      Laporan Hasil Ujian
                     </button>
                     <button
                       onClick={() => navigateTo('rekap', 'bap')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'rekap' && activeSubMenu === 'bap'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
@@ -607,38 +617,48 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   onClick={() => toggleSection('blankspot')}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <WifiOff className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium">Moda Offline / VHD</span>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <WifiOff className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="font-medium leading-snug break-words">Sekolah Blank Spot</span>
                   </div>
                   {openSections.blankspot ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   )}
                 </button>
 
                 {openSections.blankspot && (
-                  <div className="pl-8 pr-2 py-1 space-y-1 text-[11px]">
+                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
                     <button
                       onClick={() => navigateTo('blankspot', 'status')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'blankspot' && activeSubMenu === 'status'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Status Moda Ujian Sekolah
+                      Status Jaringan Moda Offline
                     </button>
                     <button
                       onClick={() => navigateTo('blankspot', 'pengajuan')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'blankspot' && activeSubMenu === 'pengajuan'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
                       Pengajuan Semi Daring
+                    </button>
+                    <button
+                      onClick={() => navigateTo('blankspot', 'sync')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'blankspot' && activeSubMenu === 'sync'
+                          ? 'text-blue-700 font-bold bg-blue-50'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Sync USB / VHD
                     </button>
                   </div>
                 )}
@@ -650,42 +670,52 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   onClick={() => toggleSection('administrasi')}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <MonitorCheck className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium">Administrasi Tes</span>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <MonitorCheck className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="font-medium leading-snug break-words">Administrasi Tes</span>
                   </div>
                   {openSections.administrasi ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   )}
                 </button>
 
                 {openSections.administrasi && (
-                  <div className="pl-8 pr-2 py-1 space-y-1 text-[11px]">
+                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
                     <button
                       onClick={() => navigateTo('administrasi', 'status')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'administrasi' && activeSubMenu === 'status'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Paket & Status Ujian ({exams.length})
+                      Status Tes
                     </button>
                     <button
                       onClick={() => navigateTo('administrasi', 'token')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'administrasi' && activeSubMenu === 'token'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Token Akses Ujian
+                      Rilis Token
+                    </button>
+                    <button
+                      onClick={() => navigateTo('administrasi', 'kelompok')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'administrasi' && activeSubMenu === 'kelompok'
+                          ? 'text-blue-700 font-bold bg-blue-50'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Kelompok Tes & Alokasi
                     </button>
                     <button
                       onClick={() => navigateTo('administrasi', 'monitor')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'administrasi' && activeSubMenu === 'monitor'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
@@ -703,44 +733,54 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   onClick={() => toggleSection('simulasi')}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <RefreshCw className="w-4 h-4 text-slate-500" />
-                    <span className="font-medium">Simulasi & Proktor</span>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <RefreshCw className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="font-medium leading-snug break-words">Simulasi</span>
                   </div>
                   {openSections.simulasi ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                   )}
                 </button>
 
                 {openSections.simulasi && (
-                  <div className="pl-8 pr-2 py-1 space-y-1 text-[11px]">
+                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
                     <button
                       onClick={() => navigateTo('simulasi', 'proktor')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'simulasi' && activeSubMenu === 'proktor'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Akun Komputer Proktor
+                      Komputer Proktor
                     </button>
                     <button
                       onClick={() => navigateTo('simulasi', 'gladi')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 ${
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
                         activeMenu === 'simulasi' && activeSubMenu === 'gladi'
                           ? 'text-blue-700 font-bold bg-blue-50'
                           : 'text-slate-600'
                       }`}
                     >
-                      Jadwal Gladi Bersih Nasional
+                      Jadwal Gladi Bersih
+                    </button>
+                    <button
+                      onClick={() => navigateTo('simulasi', 'siswa')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'simulasi' && activeSubMenu === 'siswa'
+                          ? 'text-blue-700 font-bold bg-blue-50'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Simulasi Siswa
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* 8. Tiket Bantuan ke SuperAdmin */}
+              {/* 8. Tiket Bantuan */}
               <button
                 onClick={() => navigateTo('tiket_bantuan')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
@@ -749,36 +789,74 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <Ticket className="w-4 h-4 text-slate-500" />
-                  <span>Tiket Bantuan ke Pusat</span>
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <Ticket className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Tiket Bantuan</span>
                 </div>
                 {openTicketCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[10px] font-bold">
+                  <span className="shrink-0 ml-1 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">
                     {openTicketCount}
                   </span>
                 )}
               </button>
 
-              {/* SECTION: SINKRONISASI PUSAT & SUPERADMIN */}
-              <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-wider text-emerald-700 uppercase flex items-center justify-between">
-                <span>INTEGRASI DUA ARAH</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
+              {/* SECTION: MULTI-TENANT & KELOLA SEKOLAH */}
+              <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-wider text-purple-700 uppercase flex items-center justify-between">
+                <span className="leading-snug break-words">MULTI-TENANT & KELOLA SEKOLAH</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0 animate-ping ml-1"></span>
               </div>
 
-              <button
-                onClick={() => navigateTo('sync')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'sync'
-                    ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-200'
-                    : 'text-slate-700 hover:bg-emerald-50/60'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <ArrowUpDown className="w-4 h-4 text-emerald-600" />
-                  <span className="font-semibold text-emerald-950">Sinkronisasi Super Admin</span>
-                </div>
-              </button>
+              <div>
+                <button
+                  onClick={() => toggleSection('multitenant')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-purple-50 transition"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
+                    <span className="font-semibold text-purple-950 leading-snug break-words">Fitur Multi-Tenant</span>
+                  </div>
+                  {openSections.multitenant ? (
+                    <ChevronDown className="w-3.5 h-3.5 text-purple-500 shrink-0 ml-1" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-purple-500 shrink-0 ml-1" />
+                  )}
+                </button>
+
+                {openSections.multitenant && (
+                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
+                    <button
+                      onClick={() => navigateTo('multitenant', 'schools')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-purple-50 leading-snug break-words whitespace-normal transition ${
+                        (activeMenu === 'multitenant' || activeMenu === 'sync') && (activeSubMenu === 'schools' || !activeSubMenu)
+                          ? 'text-purple-700 font-bold bg-purple-100'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Manajemen Tenant (Sekolah Binaan)
+                    </button>
+                    <button
+                      onClick={() => navigateTo('multitenant', 'isolation')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-purple-50 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'multitenant' && activeSubMenu === 'isolation'
+                          ? 'text-purple-700 font-bold bg-purple-100'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Isolasi Data & Hak Akses (RLS)
+                    </button>
+                    <button
+                      onClick={() => navigateTo('multitenant', 'sync')}
+                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-purple-50 leading-snug break-words whitespace-normal transition ${
+                        activeMenu === 'multitenant' && activeSubMenu === 'sync'
+                          ? 'text-purple-700 font-bold bg-purple-100'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      Pusat Sinkronisasi Multi-Tenant
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* SECTION: MANAJEMEN PENGGUNA */}
               <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
@@ -793,9 +871,9 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <UserCog className="w-4 h-4 text-slate-500" />
-                  <span>Pengaturan Akun</span>
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <UserCog className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Pengaturan Akun</span>
                 </div>
               </button>
             </nav>
@@ -1114,574 +1192,68 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             </div>
           )}
 
-          {/* SINKRONISASI PUSAT & SUPERADMIN (Bidirectional Sync Hub) */}
-          {activeMenu === 'sync' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-6">
-              <div className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <ArrowUpDown className="w-4 h-4 text-emerald-600" />
-                    Pusat Sinkronisasi Data Dua Arah (Super Admin ⇄ Sekolah)
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Menjamin integritas data peserta, bank soal nasional, token aktif, dan berita acara antara sekolah dan Pusmendik
-                  </p>
-                </div>
-
-                <button
-                  onClick={handlePerformSync}
-                  disabled={isSyncing}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>{isSyncing ? 'Menyinkronkan...' : 'Sinkronisasi Sekarang'}</span>
-                </button>
-              </div>
-
-              {syncFeedback && (
-                <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{syncFeedback}</span>
-                </div>
-              )}
-
-              {/* Visual 2-Way Flow */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                {/* INCOMING FROM SUPERADMIN */}
-                <div className="p-5 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-blue-900 text-sm flex items-center gap-2">
-                      <span>📥 Data Diterima Dari Super Admin</span>
-                    </span>
-                    <span className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold">
-                      Incoming
-                    </span>
-                  </div>
-
-                  <ul className="space-y-2 text-blue-950 text-[11px]">
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-blue-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Pengumuman Resmi Posko Pusat:</strong>
-                        <div className="text-slate-600">Instruksi jadwal moda daring dan semi daring hari kedua.</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-blue-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Token Ujian Nasional Hari Ini:</strong>
-                        <div className="text-slate-600">Kode Token: <strong className="font-mono text-blue-700">{activeCenterToken.code}</strong> (Kelompok 1).</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-blue-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Bank Soal Standar Nasional:</strong>
-                        <div className="text-slate-600">Paket Soal Literasi & Numerasi Terenkripsi AES-256.</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-blue-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Tanggapan & Solusi Tiket Bantuan:</strong>
-                        <div className="text-slate-600">Respon tiket kendala siswa dan reset login proktor.</div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* OUTGOING TO SUPERADMIN */}
-                <div className="p-5 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-purple-900 text-sm flex items-center gap-2">
-                      <span>📤 Data Dikirim Ke Super Admin</span>
-                    </span>
-                    <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-[10px] font-bold">
-                      Outgoing
-                    </span>
-                  </div>
-
-                  <ul className="space-y-2 text-purple-950 text-[11px]">
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-purple-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Data Peserta Didik Sekolah ({students.length} Siswa):</strong>
-                        <div className="text-slate-600">Tersinkron ke Daftar Nominasi Tetap (DNT) nasional.</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-purple-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Daftar Guru / Proktor Lab ({proctors.length} Akun):</strong>
-                        <div className="text-slate-600">Kredensial proktor aktif dan status ruang komputer.</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-purple-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Rekapitulasi Kehadiran & Berita Acara (BAP):</strong>
-                        <div className="text-slate-600">Hasil pengerjaan dan log integritas ruang ujian sekolah.</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-2 bg-white p-2.5 rounded-lg border border-purple-200">
-                      <CheckCircle className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                      <div>
-                        <strong>Pengajuan Tiket Masalah & Bantuan:</strong>
-                        <div className="text-slate-600">Permohonan bantuan reset peserta atau kendala koneksi.</div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs text-slate-600">
-                <span>Sinkronisasi Terakhir: <strong className="text-slate-900 font-mono">{lastSyncTime}</strong></span>
-                <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  Kanal Terenkripsi TLS 1.3
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* DATA MASTER VIEW */}
           {activeMenu === 'master' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-              <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <FolderOpen className="w-4 h-4 text-blue-600" />
-                    Data Master Satuan Pendidikan ({currentSchool?.name})
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Pengelolaan kelas, rombel, mata pelajaran, dan bank soal terintegrasi
-                  </p>
-                </div>
-              </div>
-
-              {/* Subtab Classes */}
-              {activeSubMenu === 'classes' && (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-xs text-slate-800">Daftar Rombel Kelas 1 s/d 6 SD:</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {classes.map((c) => (
-                      <div key={c.id} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs">
-                        <div className="font-bold text-slate-900">{c.name}</div>
-                        <div className="text-slate-500 text-[11px]">Tingkat {c.grade_level} SD • Bagian {c.section}</div>
-                        <div className="text-blue-700 font-semibold text-[11px] pt-1">
-                          {students.filter((s) => s.class_id === c.id).length} Siswa Terdaftar
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Subtab Subjects */}
-              {activeSubMenu === 'subjects' && (
-                <div className="space-y-3">
-                  <h3 className="font-bold text-xs text-slate-800">Mata Pelajaran Standar Ujian SD:</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                    {subjects.map((sub) => (
-                      <div key={sub.id} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                        <span className="font-mono text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
-                          {sub.code}
-                        </span>
-                        <div className="font-bold text-slate-800 text-sm mt-1">{sub.name}</div>
-                        <div className="text-[11px] text-slate-500">Standar Kurikulum Nasional</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Subtab Banks */}
-              {activeSubMenu === 'banks' && (
-                <div className="space-y-3">
-                  <h3 className="font-bold text-xs text-slate-800">Bank Soal yang Diterima dari Super Admin:</h3>
-                  <div className="divide-y divide-slate-100 text-xs">
-                    {questionBanks.map((b) => (
-                      <div key={b.id} className="py-3 flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-slate-900">{b.title}</div>
-                          <div className="text-slate-500 text-[11px]">{b.description}</div>
-                          <div className="text-blue-600 font-medium text-[10px] mt-0.5">
-                            {b.total_questions} Butir Soal • Terverifikasi Pusmendik
-                          </div>
-                        </div>
-                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded font-bold text-[10px] border border-emerald-200">
-                          Tersinkron
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Subtab Proctors */}
-              {activeSubMenu === 'proctors' && (
-                <div className="space-y-3">
-                  <h3 className="font-bold text-xs text-slate-800">Daftar Guru Pengawas Ruang:</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-y border-slate-200">
-                        <tr>
-                          <th className="py-2 px-3">Nama Guru Pengawas</th>
-                          <th className="py-2 px-3">NIP</th>
-                          <th className="py-2 px-3">Kontak</th>
-                          <th className="py-2 px-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {proctors.map((pr) => (
-                          <tr key={pr.id} className="hover:bg-slate-50">
-                            <td className="py-2.5 px-3 font-bold text-slate-800">{pr.full_name}</td>
-                            <td className="py-2.5 px-3 font-mono text-slate-600">{pr.nip || '-'}</td>
-                            <td className="py-2.5 px-3 text-slate-600">{pr.phone || '-'}</td>
-                            <td className="py-2.5 px-3">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                Aktif
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Default Profile */}
-              {(!activeSubMenu || activeSubMenu === 'profile') && (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
-                  <div className="font-bold text-slate-800 text-sm">Informasi Satuan Pendidikan:</div>
-                  <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-lg border border-slate-200">
-                    <div>NPSN: <strong className="font-mono text-blue-700">{currentSchool?.npsn}</strong></div>
-                    <div>Bentuk: <strong className="capitalize">{currentSchool?.school_type} • {currentSchool?.education_level}</strong></div>
-                    <div>Kepala Sekolah: <strong>{currentSchool?.principal_name}</strong></div>
-                    <div>Status Akreditasi: <strong>Akreditasi A</strong></div>
-                    <div>Alamat: {currentSchool?.address}, {currentSchool?.city_regency}</div>
-                    <div>Email Resmi: {currentSchool?.email}</div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <SchoolDataMasterView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'schools'}
+            />
           )}
 
-          {/* DATA PESERTA VIEW: List Siswa, Cetak Kartu, DNT */}
+          {/* DATA PESERTA VIEW */}
           {activeMenu === 'peserta' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-emerald-600" />
-                    Data Peserta Didik ({students.length} Siswa Terdaftar)
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Data siswa ini otomatis tersinkronisasi ke server Super Admin Pusat
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowAddStudentModal(true)}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Tambah Siswa</span>
-                  </button>
-                </div>
-              </div>
-
-              {activeSubMenu === 'kartu' ? (
-                /* Cetak Kartu Login Peserta */
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-700">Pratinjau Kartu Peserta Ujian:</span>
-                    <button
-                      onClick={() => window.print()}
-                      className="px-3.5 py-1.5 bg-slate-800 text-white text-xs font-bold rounded-lg flex items-center gap-1.5"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>Cetak Semua Kartu Siswa</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {students.slice(0, 4).map((st, idx) => {
-                      const usernameCbt = `U26${currentSchool?.npsn || '20101001'}${String(idx + 1).padStart(3, '0')}`;
-                      return (
-                        <div
-                          key={st.id}
-                          className="bg-white border-2 border-slate-800 rounded-xl p-4 shadow-sm text-slate-900 space-y-3"
-                        >
-                          <div className="flex items-center justify-between border-b-2 border-slate-800 pb-2.5">
-                            <div className="flex items-center gap-2.5">
-                              <TutWuriLogo size={36} />
-                              <div>
-                                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                  KEMENTERIAN PENDIDIKAN DASAR & MENENGAH
-                                </div>
-                                <div className="text-xs font-black tracking-tight text-slate-900">
-                                  KARTU LOGIN TES KEMAMPUAN AKADEMIK
-                                </div>
-                              </div>
-                            </div>
-                            <span className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                              SD 2026
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div className="col-span-2 space-y-1">
-                              <div>Nama: <strong>{st.full_name}</strong></div>
-                              <div>NISN: <span className="font-mono font-bold">{st.nisn}</span></div>
-                              <div>Sekolah: {currentSchool?.name}</div>
-                              <div>Rombel: {st.class_name || 'Kelas 6-A'}</div>
-                            </div>
-                            <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-200 rounded-lg">
-                              <QrCode className="w-12 h-12 text-slate-700" />
-                              <span className="text-[9px] font-mono text-slate-500 mt-1">CBT SECURE</span>
-                            </div>
-                          </div>
-
-                          <div className="bg-slate-100 border border-slate-300 rounded-lg p-2.5 grid grid-cols-2 gap-2 text-xs font-mono">
-                            <div>
-                              <span className="text-[10px] text-slate-500 uppercase block font-sans font-bold">Username</span>
-                              <span className="font-bold text-blue-700 text-sm">{usernameCbt}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-slate-500 uppercase block font-sans font-bold">Password</span>
-                              <span className="font-bold text-emerald-700 text-sm">P@ss{st.nisn.slice(-4)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                /* Tabel Siswa Biasa */
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-y border-slate-200">
-                      <tr>
-                        <th className="py-2.5 px-3">NISN</th>
-                        <th className="py-2.5 px-3">Nama Lengkap Siswa</th>
-                        <th className="py-2.5 px-3">Kelas</th>
-                        <th className="py-2.5 px-3">L/P</th>
-                        <th className="py-2.5 px-3">Status Pusat</th>
-                        <th className="py-2.5 px-3 text-right">Kartu</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {students.map((st) => (
-                        <tr key={st.id} className="hover:bg-slate-50/80">
-                          <td className="py-2.5 px-3 font-mono font-bold text-blue-700">{st.nisn}</td>
-                          <td className="py-2.5 px-3 font-bold text-slate-800">{st.full_name}</td>
-                          <td className="py-2.5 px-3 text-slate-600">{st.class_name || 'Kelas SD'}</td>
-                          <td className="py-2.5 px-3">{st.gender}</td>
-                          <td className="py-2.5 px-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 inline-flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3 text-emerald-600" />
-                              Tervalidasi Super Admin
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            <button
-                              onClick={() => setPrintingStudent(st)}
-                              className="px-2.5 py-1 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-[11px] font-semibold"
-                            >
-                              Lihat Kartu
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ADMINISTRASI TES & TOKEN */}
-          {activeMenu === 'administrasi' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-              <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <MonitorCheck className="w-4 h-4 text-blue-600" />
-                    Administrasi Pelaksanaan Tes Sekolah
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Menerima rilis token dari Super Admin dan mengaktifkan sesi ujian siswa
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowAddExamModal(true)}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Tambah Paket Ujian</span>
-                </button>
-              </div>
-
-              {/* Active Token Center received from SuperAdmin */}
-              <div className="p-5 bg-gradient-to-r from-slate-900 to-blue-950 text-white rounded-2xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300">
-                    Token Resmi dari Super Admin Pusat
-                  </span>
-                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded text-[10px] font-mono border border-emerald-500/30">
-                    Online (07.00 - 15.30 WIB)
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-4">
-                  <div className="font-mono text-4xl font-black text-yellow-300 tracking-widest">
-                    {activeCenterToken.code}
-                  </div>
-                  <div className="text-xs text-slate-300">
-                    Kode Tes: <strong className="text-white">{activeCenterToken.testCode}</strong>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-300 pt-1">
-                  Bagikan token ini kepada guru pengawas ruang untuk diumumkan ke peserta didik saat ujian dimulai.
-                </p>
-              </div>
-
-              {/* Table of exams */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-y border-slate-200">
-                    <tr>
-                      <th className="py-2.5 px-3">Judul Ujian</th>
-                      <th className="py-2.5 px-3">Mata Pelajaran</th>
-                      <th className="py-2.5 px-3">Durasi</th>
-                      <th className="py-2.5 px-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {exams.map((ex) => (
-                      <tr key={ex.id} className="hover:bg-slate-50/80">
-                        <td className="py-3 px-3 font-bold text-slate-900">{ex.title}</td>
-                        <td className="py-3 px-3 text-slate-700">{ex.subject_name || 'Matematika SD'}</td>
-                        <td className="py-3 px-3 text-slate-600">{ex.duration_minutes} Menit</td>
-                        <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
-                            Terjadwal
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TIKET BANTUAN KE SUPERADMIN VIEW */}
-          {activeMenu === 'tiket_bantuan' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-              <div className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <Ticket className="w-4 h-4 text-blue-600" />
-                    Kirim Tiket Pengaduan Kendala ke Super Admin Pusat
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Ajukan kendala teknis (reset siswa, token, listrik padam) langsung ke Posko Pusmendik
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowTicketModal(true)}
-                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Buat Tiket Baru</span>
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {allTickets.map((t) => (
-                  <div key={t.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-[10px]">
-                        {t.id} • {t.category}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                          t.status === 'resolved'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}
-                      >
-                        {t.status === 'resolved' ? 'Selesai Diberi Solusi' : 'Menunggu Tindakan Posko'}
-                      </span>
-                    </div>
-
-                    <div className="font-bold text-slate-900 text-sm">{t.subject}</div>
-                    <p className="text-slate-600 text-[11px] leading-relaxed">{t.description}</p>
-
-                    {/* SuperAdmin response box */}
-                    {t.response && (
-                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] space-y-1 mt-2">
-                        <div className="font-bold text-emerald-900 flex items-center gap-1">
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Tanggapan dari Super Admin Pusat:</span>
-                        </div>
-                        <div className="text-emerald-800">{t.response}</div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SchoolDataPesertaView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'peserta'}
+            />
           )}
 
           {/* REKAP & LAPORAN VIEW */}
           {activeMenu === 'rekap' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-              <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <BarChart2 className="w-4 h-4 text-blue-600" />
-                    Rekapitulasi Kehadiran & Berita Acara Pelaksanaan (BAP)
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Laporan kehadiran dan BAP otomatis dikirim ke server Super Admin Pusat
-                  </p>
-                </div>
-                <button
-                  onClick={() => window.print()}
-                  className="px-3.5 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Cetak Berita Acara</span>
-                </button>
-              </div>
+            <SchoolRekapLaporanView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'kehadiran'}
+            />
+          )}
 
-              <div className="border border-slate-300 rounded-xl p-5 space-y-3 text-xs max-w-xl mx-auto bg-slate-50/40">
-                <div className="text-center pb-2 border-b-2 border-slate-800">
-                  <div className="font-bold text-[10px] text-slate-500 uppercase">
-                    KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH
-                  </div>
-                  <div className="font-black text-sm uppercase text-slate-900">
-                    BERITA ACARA UJIAN TKA - {currentSchool?.name}
-                  </div>
-                </div>
+          {/* SEKOLAH BLANK SPOT VIEW */}
+          {activeMenu === 'blankspot' && (
+            <SchoolBlankSpotView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'status'}
+            />
+          )}
 
-                <div className="space-y-1.5 text-[11px]">
-                  <div>Satuan Pendidikan: <strong>{currentSchool?.name}</strong> (NPSN: {currentSchool?.npsn})</div>
-                  <div>Jumlah Peserta Hadir: <strong>{students.length} Siswa (100%)</strong></div>
-                  <div>Status Pelaksanaan: <strong className="text-emerald-700">Lancar & Tervalidasi</strong></div>
-                </div>
+          {/* ADMINISTRASI TES VIEW */}
+          {activeMenu === 'administrasi' && (
+            <SchoolAdministrasiTesView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'token'}
+            />
+          )}
 
-                <div className="pt-2 text-[10px] text-slate-500 font-mono">
-                  Dokumen ini telah tersinkronisasi otomatis ke dashboard pemantauan Super Admin Pusat.
-                </div>
-              </div>
-            </div>
+          {/* SIMULASI VIEW */}
+          {activeMenu === 'simulasi' && (
+            <SchoolSimulasiView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'proktor'}
+            />
+          )}
+
+          {/* FITUR MULTI-TENANT & SYNC VIEW */}
+          {(activeMenu === 'multitenant' || activeMenu === 'sync') && (
+            <SchoolMultiTenantView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'schools'}
+              onOpenSqlModal={onOpenSqlModal}
+            />
           )}
 
           {/* PENGATURAN AKUN VIEW */}
