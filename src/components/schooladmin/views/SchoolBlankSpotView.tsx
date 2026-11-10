@@ -15,6 +15,9 @@ import {
   FileCheck2,
 } from 'lucide-react';
 
+import { tkaStore } from '../../../lib/tkaStore';
+import { BlankSpotRequest } from '../../../types/tka';
+
 interface SchoolBlankSpotViewProps {
   schoolId: string;
   subTab?: string;
@@ -26,14 +29,26 @@ export const SchoolBlankSpotView: React.FC<SchoolBlankSpotViewProps> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<string>(subTab);
   const school = tenantStore.getSchoolById(schoolId) || tenantStore.getSchools()[0];
+  const [requests, setRequests] = useState<BlankSpotRequest[]>(() => tkaStore.getBlankSpotRequests(schoolId));
 
   // Submission State
-  const [reason, setReason] = useState('Koneksi internet sering tidak stabil saat cuaca hujan');
+  const [reason, setReason] = useState('Koneksi internet sering tidak stabil saat cuaca hujan dan latensi tinggi');
   const [submitted, setSubmitted] = useState(false);
-  const [bandwidth, setBandwidth] = useState('10 Mbps');
+  const [bandwidth, setBandwidth] = useState('2.5');
 
   const handleSubmitSemiDaring = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!school) return;
+    tkaStore.addBlankSpotRequest({
+      school_id: school.id,
+      school_name: school.name,
+      npsn: school.npsn,
+      province: school.province,
+      city_regency: school.city_regency,
+      reason: reason.trim(),
+      internet_speed_mbps: parseFloat(bandwidth) || 2.5,
+    });
+    setRequests(tkaStore.getBlankSpotRequests(schoolId));
     setSubmitted(true);
   };
 

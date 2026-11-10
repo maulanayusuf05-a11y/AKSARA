@@ -71,19 +71,46 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
     <div className="space-y-4">
       {/* Quick KPI Strip at the top of dashboard */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div 
+          onClick={() => onNavigate('kelola_sekolah')}
+          className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+        >
           <div>
             <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-              Tenant Sekolah SD
+              Total Sekolah Nasional
             </div>
             <div className="text-xl font-bold text-slate-900 mt-0.5">{schools.length} Sekolah</div>
             <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
               <CheckCircle className="w-3 h-3" />
-              <span>Semua Tenant Aktif Terisolasi</span>
+              <span>{schools.filter((s) => s.status === 'active').length} Terverifikasi Aktif</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
             <Building2 className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('verifikasi_pendaftaran')}
+          className={`p-3.5 rounded-xl border shadow-xs flex items-center justify-between cursor-pointer transition ${
+            schools.some((s) => s.status === 'pending')
+              ? 'bg-amber-50/70 border-amber-300 hover:border-amber-400'
+              : 'bg-white border-slate-200/80 hover:border-slate-300'
+          }`}
+        >
+          <div>
+            <div className="text-[11px] font-semibold text-amber-800 uppercase tracking-wide">
+              Menunggu Verifikasi
+            </div>
+            <div className="text-xl font-bold text-amber-950 mt-0.5">
+              {schools.filter((s) => s.status === 'pending').length} Sekolah
+            </div>
+            <div className="text-[10px] text-amber-700 font-bold flex items-center gap-1 mt-0.5">
+              <span>Klik untuk periksa berkas & NPSN →</span>
+            </div>
+          </div>
+          <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+            <ShieldCheck className="w-5 h-5" />
           </div>
         </div>
 
@@ -102,23 +129,10 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
           </div>
         </div>
 
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-              Komputer Proktor
-            </div>
-            <div className="text-xl font-bold text-slate-900 mt-0.5">{proctors.length} Ruang/Lab</div>
-            <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
-              <Activity className="w-3 h-3" />
-              <span>Sinkronisasi Siap</span>
-            </div>
-          </div>
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <Activity className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div 
+          onClick={() => onNavigate('administrasi_pusat')}
+          className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+        >
           <div>
             <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
               Token Aktif Hari Ini
@@ -128,7 +142,7 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
               Kelompok 1 (s/d {activeToken.validUntil})
             </div>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
             <KeyRound className="w-5 h-5" />
           </div>
         </div>

@@ -18,6 +18,7 @@ import {
   ExamToken,
   ExamSession,
   AuditLog,
+  SchoolStatus,
 } from '../types/database';
 
 // 1. Ambil kredensial dari Environment Variables atau Local Storage Override
@@ -112,6 +113,42 @@ const INITIAL_SCHOOLS: School[] = [
     status: 'active',
     created_at: '2025-01-15T09:30:00Z',
     updated_at: '2025-01-15T09:30:00Z',
+  },
+  {
+    id: 'sd-cibinong-bogor-uuid-003',
+    npsn: '20205003',
+    name: 'SD Negeri 05 Cibinong Bogor',
+    education_level: 'SD',
+    school_type: 'negeri',
+    address: 'Jl. Raya Mayor Oking Jaya Atmaja No. 88, Cibinong',
+    province: 'Jawa Barat',
+    city_regency: 'Kabupaten Bogor',
+    district: 'Cibinong',
+    postal_code: '16918',
+    phone: '021-8752310',
+    email: 'sdn05cibinong@bogor.sch.id',
+    principal_name: 'Dra. Hj. Siti Nurhaliza, M.Pd.',
+    status: 'pending',
+    created_at: '2026-02-23T10:15:00Z',
+    updated_at: '2026-02-23T10:15:00Z',
+  },
+  {
+    id: 'sd-harapan-surabaya-uuid-004',
+    npsn: '20506004',
+    name: 'SD Swasta Harapan Bangsa Surabaya',
+    education_level: 'SD',
+    school_type: 'swasta',
+    address: 'Jl. Darmo Permai Selatan No. 12, Sukomanunggal',
+    province: 'Jawa Timur',
+    city_regency: 'Kota Surabaya',
+    district: 'Sukomanunggal',
+    postal_code: '60189',
+    phone: '031-7345678',
+    email: 'admin@harapanbangsasby.sch.id',
+    principal_name: 'Ir. H. Gunawan Wibisono, M.T.',
+    status: 'suspended',
+    created_at: '2025-02-01T08:00:00Z',
+    updated_at: '2026-02-20T14:00:00Z',
   },
 ];
 
@@ -450,6 +487,11 @@ class MultiTenantStore {
     return this.get<School[]>('schools', INITIAL_SCHOOLS);
   }
 
+  getSchoolById(id?: string | null): School | undefined {
+    if (!id) return undefined;
+    return this.getSchools().find((s) => s.id === id);
+  }
+
   saveSchool(school: School): void {
     const schools = this.getSchools();
     const existingIndex = schools.findIndex((s) => s.id === school.id);
@@ -458,6 +500,31 @@ class MultiTenantStore {
     } else {
       schools.push(school);
     }
+    this.set('schools', schools);
+  }
+
+  updateSchoolStatus(schoolId: string, status: SchoolStatus, note?: string): void {
+    const schools = this.getSchools();
+    const idx = schools.findIndex((s) => s.id === schoolId);
+    if (idx >= 0) {
+      schools[idx] = { ...schools[idx], status, updated_at: new Date().toISOString() };
+      this.set('schools', schools);
+      this.addAuditLog({
+        school_id: schoolId,
+        user_id: 'user-superadmin-01',
+        user_role: 'super_admin',
+        user_email: 'admin@kemdikbud.edujian.id',
+        action: 'UPDATE_SCHOOL_STATUS',
+        entity_type: 'SCHOOL',
+        entity_id: schoolId,
+        details: { new_status: status, note: note || 'Diperbarui oleh Superadmin' },
+      });
+    }
+  }
+
+  deleteSchool(schoolId: string): void {
+    let schools = this.getSchools();
+    schools = schools.filter((s) => s.id !== schoolId);
     this.set('schools', schools);
   }
 

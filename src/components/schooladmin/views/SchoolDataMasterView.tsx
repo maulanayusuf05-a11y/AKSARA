@@ -45,7 +45,7 @@ export const SchoolDataMasterView: React.FC<SchoolDataMasterViewProps> = ({
   // Form tambah rombel
   const [showAddClass, setShowAddClass] = useState(false);
   const [newClassName, setNewClassName] = useState('');
-  const [newGrade, setNewGrade] = useState<number>(6);
+  const [newGrade, setNewGrade] = useState<1 | 2 | 3 | 4 | 5 | 6>(6);
   const [newSection, setNewSection] = useState('A');
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -72,7 +72,7 @@ export const SchoolDataMasterView: React.FC<SchoolDataMasterViewProps> = ({
       name: newClassName.trim(),
       grade_level: newGrade,
       section: newSection,
-      academic_year: '2025/2026',
+      academic_year_id: 'ay-2025-2026',
       created_at: new Date().toISOString(),
     };
     tenantStore.addClass(newC);
@@ -484,7 +484,7 @@ export const SchoolDataMasterView: React.FC<SchoolDataMasterViewProps> = ({
                   <label className="block text-slate-700 font-semibold mb-1">Tingkat Kelas</label>
                   <select
                     value={newGrade}
-                    onChange={(e) => setNewGrade(Number(e.target.value))}
+                    onChange={(e) => setNewGrade(Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900"
                   >
                     {[1, 2, 3, 4, 5, 6].map((g) => (

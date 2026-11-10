@@ -1,4 +1,32 @@
-import { Announcement, HelpdeskTicket, ProctorComputer, TestGroupAllocation, DownloadableFile } from '../types/tka';
+import { Announcement, HelpdeskTicket, ProctorComputer, TestGroupAllocation, DownloadableFile, BlankSpotRequest } from '../types/tka';
+
+const INITIAL_BLANK_SPOT_REQUESTS: BlankSpotRequest[] = [
+  {
+    id: 'req-bs-01',
+    school_id: 'sdn-01-menteng-uuid-001',
+    school_name: 'SDN 01 Menteng Jakarta',
+    npsn: '20101001',
+    province: 'DKI Jakarta',
+    city_regency: 'Kota Jakarta Pusat',
+    reason: 'Uji kesiapan cadangan darurat moda semi-daring untuk lab 2 jika provider FO kabel optik terputus',
+    internet_speed_mbps: 1.2,
+    status: 'approved',
+    submitted_at: '2026-02-22T09:00:00Z',
+    reviewed_at: '2026-02-22T11:30:00Z',
+  },
+  {
+    id: 'req-bs-02',
+    school_id: 'sd-alazhar-rawamangun-uuid-002',
+    school_name: 'SD Swasta Islam Terpadu Cendekia',
+    npsn: '20102002',
+    province: 'DKI Jakarta',
+    city_regency: 'Kota Jakarta Timur',
+    reason: 'Kabel fiber optik putus akibat proyek pelebaran jalan raya, koneksi sangat lambat',
+    internet_speed_mbps: 0.8,
+    status: 'pending',
+    submitted_at: '2026-02-24T06:15:00Z',
+  },
+];
 
 const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   {
@@ -275,6 +303,40 @@ class TkaStore {
     };
     this.set('active_token', tokenData);
     return code;
+  }
+
+  // Blank Spot Requests
+  getBlankSpotRequests(schoolId?: string | null): BlankSpotRequest[] {
+    const all = this.get<BlankSpotRequest[]>('blank_spot_requests', INITIAL_BLANK_SPOT_REQUESTS);
+    if (!schoolId) return all;
+    return all.filter((r) => r.school_id === schoolId);
+  }
+
+  addBlankSpotRequest(req: Omit<BlankSpotRequest, 'id' | 'submitted_at' | 'status'>): BlankSpotRequest {
+    const all = this.getBlankSpotRequests();
+    const newReq: BlankSpotRequest = {
+      ...req,
+      id: 'req-bs-' + Math.random().toString(36).substring(2, 9),
+      status: 'pending',
+      submitted_at: new Date().toISOString(),
+    };
+    all.unshift(newReq);
+    this.set('blank_spot_requests', all);
+    return newReq;
+  }
+
+  updateBlankSpotRequest(id: string, status: 'approved' | 'rejected', rejection_reason?: string): void {
+    const all = this.getBlankSpotRequests();
+    const idx = all.findIndex((r) => r.id === id);
+    if (idx >= 0) {
+      all[idx] = {
+        ...all[idx],
+        status,
+        rejection_reason: status === 'rejected' ? rejection_reason : undefined,
+        reviewed_at: new Date().toISOString(),
+      };
+      this.set('blank_spot_requests', all);
+    }
   }
 }
 

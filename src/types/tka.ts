@@ -57,3 +57,18 @@ export interface DownloadableFile {
   date: string;
   version?: string;
 }
+
+export interface BlankSpotRequest {
+  id: string;
+  school_id: string;
+  school_name: string;
+  npsn: string;
+  province: string;
+  city_regency: string;
+  reason: string;
+  internet_speed_mbps: number;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
+  submitted_at: string;
+  reviewed_at?: string;
+}

@@ -68,6 +68,7 @@ export const SchoolDataPesertaView: React.FC<SchoolDataPesertaViewProps> = ({
       full_name: fullName.trim(),
       gender: gender,
       birth_date: '2014-05-15',
+      is_active: true,
       created_at: new Date().toISOString(),
     };
 

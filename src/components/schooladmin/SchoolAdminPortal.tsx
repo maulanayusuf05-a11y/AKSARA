@@ -11,7 +11,6 @@ import { SchoolRekapLaporanView } from './views/SchoolRekapLaporanView';
 import { SchoolBlankSpotView } from './views/SchoolBlankSpotView';
 import { SchoolAdministrasiTesView } from './views/SchoolAdministrasiTesView';
 import { SchoolSimulasiView } from './views/SchoolSimulasiView';
-import { SchoolMultiTenantView } from './views/SchoolMultiTenantView';
 import {
   Menu,
   ChevronDown,
@@ -58,6 +57,8 @@ import {
   Phone,
   QrCode,
   Layers,
+  HelpCircle,
+  AlertCircle,
 } from 'lucide-react';
 
 interface SchoolAdminPortalProps {
@@ -74,33 +75,21 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [showRoleDropdown, setShowRoleDropdown] = useState<boolean>(false);
 
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    master: false,
-    peserta: false,
-    rekap: false,
-    blankspot: false,
-    administrasi: false,
-    simulasi: false,
-    multitenant: false,
-    sync: true, // open by default so user sees bidirectional sync
-    pengguna: false,
-  });
-
   // DATA DARI SUPERADMIN (DITERIMA OLEH SEKOLAH)
   const [announcements] = useState<Announcement[]>(() => tkaStore.getAnnouncements());
   const [activeCenterToken] = useState(() => tkaStore.getActiveToken());
   const [allTickets, setAllTickets] = useState<HelpdeskTicket[]>(() => tkaStore.getTickets(schoolId));
 
-  // DATA LOKAL SEKOLAH (DIKIRIM KE SUPERADMIN)
+  // DATA LOKAL SEKOLAH (TERISOLASI)
   const [classes, setClasses] = useState<ClassRoom[]>(() => tenantStore.getClasses(schoolId));
   const [students, setStudents] = useState<Student[]>(() => tenantStore.getStudents(schoolId));
   const [proctors, setProctors] = useState<Proctor[]>(() => tenantStore.getProctors(schoolId));
-  const [subjects] = useState<Subject[]>(() => tenantStore.getSubjects(schoolId));
-  const [questionBanks] = useState<QuestionBank[]>(() => tenantStore.getQuestionBanks(schoolId));
+  const [subjects, setSubjects] = useState<Subject[]>(() => tenantStore.getSubjects(schoolId));
+  const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>(() => tenantStore.getQuestionBanks(schoolId));
   const [exams, setExams] = useState<Exam[]>(() => tenantStore.getExams(schoolId));
   const [tokens, setTokens] = useState<ExamToken[]>(() => tenantStore.getTokens(schoolId));
 
-  // Sync state
+  // Sync state with Superadmin
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('24-02-2026 07:15:30 WIB');
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
@@ -108,31 +97,12 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
   // Modals & form state
   const [selectedFile, setSelectedFile] = useState<DownloadableFile | null>(null);
   const [showContactModal, setShowContactModal] = useState<string | null>(null);
-  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
-  const [newStudent, setNewStudent] = useState({
-    full_name: '',
-    nisn: '',
-    gender: 'L' as 'L' | 'P',
-    class_id: classes[0]?.id || '',
-  });
 
-  const [showAddExamModal, setShowAddExamModal] = useState(false);
-  const [newExamTitle, setNewExamTitle] = useState('');
-  const [newExamSubject, setNewExamSubject] = useState(subjects[0]?.id || '');
-  const [newExamDuration, setNewExamDuration] = useState(60);
-
-  // Ticket creation
+  // Ticket creation to Superadmin
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketCategory, setTicketCategory] = useState<HelpdeskTicket['category']>('RESET_LOGIN');
   const [ticketDescription, setTicketDescription] = useState('');
-
-  // Participant Card Print Preview
-  const [printingStudent, setPrintingStudent] = useState<Student | null>(null);
-
-  const toggleSection = (key: string) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
 
   const navigateTo = (menu: string, sub = '') => {
     setActiveMenu(menu);
@@ -143,9 +113,9 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
   const handlePerformSync = () => {
     setIsSyncing(true);
     setTimeout(() => {
-      // 1. Ambil data terbaru dari Super Admin (pengumuman, tiket, token nasional)
+      // 1. Ambil instruksi terbaru dari Super Admin (pengumuman, tiket, token nasional)
       setAllTickets(tkaStore.getTickets(schoolId));
-      // 2. Kirim update siswa & proktor sekolah ke Super Admin
+      // 2. Refresh data sekolah
       setStudents(tenantStore.getStudents(schoolId));
       setProctors(tenantStore.getProctors(schoolId));
       setClasses(tenantStore.getClasses(schoolId));
@@ -154,48 +124,9 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
       const nowStr = new Date().toLocaleTimeString('id-ID') + ' WIB';
       setLastSyncTime(nowStr);
       setIsSyncing(false);
-      setSyncFeedback('Sinkronisasi 2 arah berhasil! Data sekolah dan instruksi Super Admin telah selaras 100%.');
-      setTimeout(() => setSyncFeedback(null), 4000);
-    }, 1000);
-  };
-
-  // Add Student (Data sent to SuperAdmin)
-  const handleAddStudent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newStudent.full_name || !newStudent.nisn) return;
-
-    const selectedClass = classes.find((c) => c.id === newStudent.class_id);
-    const studentRecord: Student = {
-      id: 's-' + Math.random().toString(36).substring(2, 9),
-      school_id: schoolId,
-      user_id: null,
-      full_name: newStudent.full_name.trim(),
-      nisn: newStudent.nisn.trim(),
-      gender: newStudent.gender,
-      class_id: newStudent.class_id,
-      class_name: selectedClass?.name || 'Kelas 6-A',
-      is_active: true,
-      created_at: new Date().toISOString(),
-    };
-
-    tenantStore.addStudent(studentRecord);
-    setStudents(tenantStore.getStudents(schoolId));
-
-    // Audit log (terbaca juga oleh Super Admin)
-    tenantStore.addAuditLog({
-      school_id: schoolId,
-      user_id: user?.id || 'admin',
-      user_role: 'school_admin',
-      user_email: user?.email || '',
-      action: 'ADD_STUDENT',
-      entity_type: 'STUDENT',
-      entity_id: studentRecord.id,
-      details: { name: studentRecord.full_name, nisn: studentRecord.nisn },
-    });
-
-    setShowAddStudentModal(false);
-    setNewStudent({ full_name: '', nisn: '', gender: 'L', class_id: classes[0]?.id || '' });
-    alert(`Siswa ${studentRecord.full_name} berhasil didaftarkan dan data telah disinkronkan ke Super Admin.`);
+      setSyncFeedback('Sinkronisasi Berhasil! Data sekolah Anda telah selaras dengan server pusat Super Admin Kemendikdasmen.');
+      setTimeout(() => setSyncFeedback(null), 4500);
+    }, 900);
   };
 
   // Create Ticket to SuperAdmin
@@ -218,16 +149,17 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
     setShowTicketModal(false);
     setTicketSubject('');
     setTicketDescription('');
-    alert(`Tiket bantuan "${newT.id}" telah dikirim ke Posko Super Admin Pusat.`);
+    setSyncFeedback(`Tiket bantuan "${newT.id}" telah dikirim ke Posko Super Admin Pusat!`);
+    setTimeout(() => setSyncFeedback(null), 4500);
   };
 
   const openTicketCount = allTickets.filter((t) => t.status === 'open' || t.status === 'in_progress').length;
 
   return (
     <div className="min-h-screen bg-[#f0f2f5] flex flex-col font-sans text-slate-800 antialiased">
-      {/* 1. TOP HEADER MATCHING SUPERADMIN PORTAL */}
+      {/* 1. TOP HEADER: APP BAR */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40 h-14 flex items-center justify-between px-3 sm:px-6 shadow-xs">
-        {/* Left: Sidebar toggle + Simulated TKA URL */}
+        {/* Left: Sidebar toggle + Simulated URL */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -240,30 +172,30 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
           {/* Browser Address Simulation */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full border border-slate-200 text-xs text-slate-600 font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>tka.kemendikdasmen.go.id/sekolah/home</span>
+            <span>tka.kemendikdasmen.go.id/sekolah/admin</span>
           </div>
 
           {/* School Badge in Header */}
           <div className="hidden lg:flex items-center gap-2 border-l border-slate-200 pl-3">
             <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-            <span className="font-bold text-xs text-slate-800">{currentSchool?.name || 'SDN 01 Menteng'}</span>
+            <span className="font-bold text-xs text-slate-800">{currentSchool?.name || 'SD Negeri 01'}</span>
             <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
               NPSN: {currentSchool?.npsn || '20101001'}
             </span>
           </div>
         </div>
 
-        {/* Right: Notifications, Live Sync Status, Avatar, and Demo Switcher */}
+        {/* Right: Sync Status, Demo Switcher, Avatar */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Live Sync Badge with SuperAdmin */}
-          <div
+          {/* Live Sync Button with SuperAdmin */}
+          <button
             onClick={handlePerformSync}
-            className="cursor-pointer hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-semibold transition"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-semibold transition"
             title="Klik untuk menyinkronkan data dengan Super Admin sekarang"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>Pusat Tersinkronisasi</span>
-          </div>
+            <span>Sinkronkan ke Pusat</span>
+          </button>
 
           {/* Quick Demo Switch Role */}
           <div className="relative">
@@ -279,7 +211,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             </button>
 
             {showRoleDropdown && (
-              <div className="absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50 text-xs">
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50 text-xs">
                 <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400">
                   Beralih Mode Peran
                 </div>
@@ -293,7 +225,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   <Building2 className="w-4 h-4 text-purple-600" />
                   <div>
                     <div className="font-semibold text-slate-800">Super Admin Pusat</div>
-                    <div className="text-[10px] text-slate-400">Kendali nasional seluruh sekolah</div>
+                    <div className="text-[10px] text-slate-400">Verifikasi pendaftaran & kendali nasional</div>
                   </div>
                 </button>
                 <button
@@ -306,7 +238,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   <MonitorCheck className="w-4 h-4 text-amber-600" />
                   <div>
                     <div className="font-semibold text-slate-800">Ruang Proktor</div>
-                    <div className="text-[10px] text-slate-400">Pengawasan tes real-time</div>
+                    <div className="text-[10px] text-slate-400">Pengawasan tes di lab sekolah</div>
                   </div>
                 </button>
                 <button
@@ -326,53 +258,52 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             )}
           </div>
 
-          {/* Green Message Badge (0) */}
-          <div className="relative p-1.5 text-slate-600 hover:text-slate-900 cursor-pointer">
+          {/* Ticket Messages to Superadmin */}
+          <div
+            onClick={() => navigateTo('tiket_bantuan')}
+            className="relative p-1.5 text-slate-600 hover:text-slate-900 cursor-pointer"
+            title="Layanan Tiket Bantuan ke Pusat"
+          >
             <MessageSquare className="w-5 h-5" />
-            <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center">
-              0
-            </span>
+            {openTicketCount > 0 && (
+              <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">
+                {openTicketCount}
+              </span>
+            )}
           </div>
 
-          {/* Red Bell Badge (0) */}
-          <div className="relative p-1.5 text-slate-600 hover:text-slate-900 cursor-pointer">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-              {openTicketCount}
-            </span>
-          </div>
-
-          {/* Orange Circular User Avatar matching screenshot */}
+          {/* User Avatar */}
           <div
             onClick={() => navigateTo('pengaturan_akun')}
-            className="w-8 h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer hover:ring-2 hover:ring-orange-300 transition"
-            title="Profil Pengguna Admin Sekolah"
+            className="w-8 h-8 rounded-full bg-[#1b72e8] text-white flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer hover:ring-2 hover:ring-blue-300 transition"
+            title="Profil Admin Sekolah"
           >
-            <span>S</span>
+            <span>AS</span>
           </div>
         </div>
       </header>
 
       {/* 2. BODY LAYOUT: SIDEBAR + MAIN CONTENT */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT SIDEBAR: Hilangkan scroll ke samping dan atas-bawah (overflow-x-hidden no-scrollbar) */}
+        {/* LEFT SIDEBAR: SCHOOL ADMIN SCOPE */}
         {sidebarOpen && (
           <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar max-h-[calc(100vh-3.5rem)] select-none">
-            {/* Logo & Kemdikbud Header matching screenshot */}
+            {/* Logo & School Header */}
             <div className="p-4 flex flex-col items-center text-center border-b border-slate-100">
-              <TutWuriLogo size={52} className="mb-2 shrink-0" />
-              <div className="font-black text-[14px] tracking-wide text-slate-800 uppercase leading-snug break-words">
-                AKSARA
+              <TutWuriLogo size={50} className="mb-2 shrink-0" />
+              <div className="font-black text-[13px] tracking-tight text-slate-900 uppercase leading-snug break-words">
+                {currentSchool?.name || 'ADMIN SEKOLAH'}
               </div>
-              <div className="text-[10px] font-semibold text-slate-500 leading-tight mt-0.5 max-w-[240px]">
-                Asesmen dan Kompetensi Siswa Terarah
+              <div className="text-[10px] font-bold text-blue-600 mt-0.5">
+                NPSN: {currentSchool?.npsn || '20101001'}
               </div>
-              <div className="mt-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-md text-[10.5px] text-blue-800 font-bold text-center break-words leading-tight w-full max-w-[250px]">
-                {currentSchool?.name || 'SDN 01 Menteng'}
+              <div className="mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                <span>Isolasi Data Terlindungi</span>
               </div>
             </div>
 
-            {/* Dark Blue 3-Action Sub-Bar: [Dashboard] [Pengaturan] [Keluar] */}
+            {/* Dark Blue 3-Action Sub-Bar */}
             <div className="bg-[#1b365d] text-white px-2 py-2 grid grid-cols-3 gap-1 text-[11px] font-medium border-b border-slate-900">
               <button
                 onClick={() => navigateTo('dashboard')}
@@ -381,10 +312,10 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     ? 'bg-[#294c7a] font-bold text-white shadow-xs'
                     : 'text-slate-200 hover:bg-[#23426b]'
                 }`}
-                title="Menuju Dashboard"
+                title="Menuju Beranda Sekolah"
               >
                 <Home className="w-3.5 h-3.5 shrink-0" />
-                <span>Dashboard</span>
+                <span>Beranda</span>
               </button>
 
               <button
@@ -394,10 +325,10 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     ? 'bg-[#294c7a] font-bold text-white shadow-xs'
                     : 'text-slate-200 hover:bg-[#23426b]'
                 }`}
-                title="Pengaturan Akun"
+                title="Pengaturan Akun Sekolah"
               >
                 <Settings className="w-3.5 h-3.5 shrink-0" />
-                <span>Pengaturan</span>
+                <span>Akun</span>
               </button>
 
               <button
@@ -410,14 +341,14 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
               </button>
             </div>
 
-            {/* Menu List */}
+            {/* Navigation Menus for School Administrator */}
             <nav className="p-2 space-y-1 text-xs">
-              {/* SECTION: MENU UTAMA */}
+              {/* SECTION 1: OPERASIONAL SEKOLAH */}
               <div className="px-3 pt-3 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                MENU UTAMA
+                OPERASIONAL SEKOLAH
               </div>
 
-              {/* 1. Dashboard */}
+              {/* 1. Beranda Sekolah */}
               <button
                 onClick={() => navigateTo('dashboard')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
@@ -428,359 +359,129 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <LayoutDashboard className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Dashboard</span>
+                  <span className="leading-snug break-words">Beranda Sekolah</span>
                 </div>
               </button>
 
-              {/* 2. Data Master */}
-              <div>
-                <button
-                  onClick={() => toggleSection('master')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <FolderOpen className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="font-medium leading-snug break-words">Data Master</span>
-                  </div>
-                  {openSections.master ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  )}
-                </button>
+              {/* 2. Profil & Sarpras Sekolah */}
+              <button
+                onClick={() => navigateTo('profil_sekolah')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                  activeMenu === 'profil_sekolah'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Profil & Sarpras Sekolah</span>
+                </div>
+              </button>
 
-                {openSections.master && (
-                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
-                    <button
-                      onClick={() => navigateTo('master', 'schools')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'master' && (activeSubMenu === 'schools' || activeSubMenu === 'profile')
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Satuan Pendidikan
-                    </button>
-                    <button
-                      onClick={() => navigateTo('master', 'subjects')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'master' && activeSubMenu === 'subjects'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Mata Pelajaran
-                    </button>
-                    <button
-                      onClick={() => navigateTo('master', 'banks')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'master' && activeSubMenu === 'banks'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Bank Soal
-                    </button>
-                    <button
-                      onClick={() => navigateTo('master', 'sarpras')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'master' && activeSubMenu === 'sarpras'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Sarpras / Laboratorium
-                    </button>
-                  </div>
-                )}
+              {/* 3. Data Peserta Didik (Siswa) */}
+              <button
+                onClick={() => navigateTo('peserta_didik')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                  activeMenu === 'peserta_didik'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <Users className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Peserta Didik (Siswa)</span>
+                </div>
+                <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
+                  {students.length}
+                </span>
+              </button>
+
+              {/* 4. Rombel & Guru Proktor */}
+              <button
+                onClick={() => navigateTo('rombel_proktor')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                  activeMenu === 'rombel_proktor'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <FolderOpen className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Rombel & Guru Proktor</span>
+                </div>
+              </button>
+
+              {/* SECTION 2: PELAKSANAAN ASESMEN SEKOLAH */}
+              <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                PELAKSANAAN ASESMEN
               </div>
 
-              {/* 3. Data Peserta */}
-              <div>
-                <button
-                  onClick={() => toggleSection('peserta')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <Users className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="font-medium leading-snug break-words">Data Peserta</span>
-                  </div>
-                  {openSections.peserta ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  )}
-                </button>
+              {/* 5. Bank Soal & Penjadwalan */}
+              <button
+                onClick={() => navigateTo('bank_soal_jadwal')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                  activeMenu === 'bank_soal_jadwal'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <FileText className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Bank Soal & Jadwal Sesi</span>
+                </div>
+              </button>
 
-                {openSections.peserta && (
-                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
-                    <button
-                      onClick={() => navigateTo('peserta', 'peserta')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'peserta' && (activeSubMenu === 'peserta' || activeSubMenu === 'list')
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Peserta Didik ({students.length})
-                    </button>
-                    <button
-                      onClick={() => navigateTo('peserta', 'generate')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'peserta' && activeSubMenu === 'generate'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Generate Nomor Peserta
-                    </button>
-                    <button
-                      onClick={() => navigateTo('peserta', 'kartu')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'peserta' && activeSubMenu === 'kartu'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Cetak Kartu Login Peserta
-                    </button>
-                    <button
-                      onClick={() => navigateTo('peserta', 'dnt')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'peserta' && activeSubMenu === 'dnt'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Rekap DNT
-                    </button>
-                  </div>
-                )}
+              {/* 6. Pelaksanaan & Pengawasan Ujian */}
+              <button
+                onClick={() => navigateTo('pelaksanaan_tes')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                  activeMenu === 'pelaksanaan_tes'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <MonitorCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="leading-snug break-words">Pengawasan Tes & Reset</span>
+                </div>
+              </button>
+
+              {/* 7. Koneksi Jaringan & Blank Spot */}
+              <button
+                onClick={() => navigateTo('jaringan_blankspot')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                  activeMenu === 'jaringan_blankspot'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <WifiOff className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="leading-snug break-words">Koneksi & Pengajuan 3T</span>
+                </div>
+              </button>
+
+              {/* SECTION 3: PELAPORAN & DUKUNGAN */}
+              <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                PELAPORAN & DUKUNGAN
               </div>
 
-              {/* 4. Rekap dan Laporan */}
-              <div>
-                <button
-                  onClick={() => toggleSection('rekap')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <BarChart2 className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="font-medium leading-snug break-words">Rekap dan Laporan</span>
-                  </div>
-                  {openSections.rekap ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  )}
-                </button>
+              {/* 8. Hasil Ujian & Berita Acara (BAP) */}
+              <button
+                onClick={() => navigateTo('hasil_laporan')}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                  activeMenu === 'hasil_laporan'
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <BarChart2 className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Hasil Ujian & BAP Resmi</span>
+                </div>
+              </button>
 
-                {openSections.rekap && (
-                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
-                    <button
-                      onClick={() => navigateTo('rekap', 'kehadiran')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'rekap' && activeSubMenu === 'kehadiran'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Rekap Kehadiran
-                    </button>
-                    <button
-                      onClick={() => navigateTo('rekap', 'laporan')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'rekap' && activeSubMenu === 'laporan'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Laporan Hasil Ujian
-                    </button>
-                    <button
-                      onClick={() => navigateTo('rekap', 'bap')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'rekap' && activeSubMenu === 'bap'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Berita Acara (BAP)
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* 5. Sekolah Blank Spot */}
-              <div>
-                <button
-                  onClick={() => toggleSection('blankspot')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <WifiOff className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="font-medium leading-snug break-words">Sekolah Blank Spot</span>
-                  </div>
-                  {openSections.blankspot ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  )}
-                </button>
-
-                {openSections.blankspot && (
-                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
-                    <button
-                      onClick={() => navigateTo('blankspot', 'status')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'blankspot' && activeSubMenu === 'status'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Status Jaringan Moda Offline
-                    </button>
-                    <button
-                      onClick={() => navigateTo('blankspot', 'pengajuan')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'blankspot' && activeSubMenu === 'pengajuan'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Pengajuan Semi Daring
-                    </button>
-                    <button
-                      onClick={() => navigateTo('blankspot', 'sync')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'blankspot' && activeSubMenu === 'sync'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Sync USB / VHD
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* 6. Administrasi Tes */}
-              <div>
-                <button
-                  onClick={() => toggleSection('administrasi')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <MonitorCheck className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="font-medium leading-snug break-words">Administrasi Tes</span>
-                  </div>
-                  {openSections.administrasi ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  )}
-                </button>
-
-                {openSections.administrasi && (
-                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
-                    <button
-                      onClick={() => navigateTo('administrasi', 'status')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'administrasi' && activeSubMenu === 'status'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Status Tes
-                    </button>
-                    <button
-                      onClick={() => navigateTo('administrasi', 'token')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'administrasi' && activeSubMenu === 'token'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Rilis Token
-                    </button>
-                    <button
-                      onClick={() => navigateTo('administrasi', 'kelompok')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'administrasi' && activeSubMenu === 'kelompok'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Kelompok Tes & Alokasi
-                    </button>
-                    <button
-                      onClick={() => navigateTo('administrasi', 'monitor')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'administrasi' && activeSubMenu === 'monitor'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Live Monitoring Siswa
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* 7. Simulasi */}
-              <div>
-                <button
-                  onClick={() => toggleSection('simulasi')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <RefreshCw className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="font-medium leading-snug break-words">Simulasi</span>
-                  </div>
-                  {openSections.simulasi ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                  )}
-                </button>
-
-                {openSections.simulasi && (
-                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
-                    <button
-                      onClick={() => navigateTo('simulasi', 'proktor')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'simulasi' && activeSubMenu === 'proktor'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Komputer Proktor
-                    </button>
-                    <button
-                      onClick={() => navigateTo('simulasi', 'gladi')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'simulasi' && activeSubMenu === 'gladi'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Jadwal Gladi Bersih
-                    </button>
-                    <button
-                      onClick={() => navigateTo('simulasi', 'siswa')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-slate-100 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'simulasi' && activeSubMenu === 'siswa'
-                          ? 'text-blue-700 font-bold bg-blue-50'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Simulasi Siswa
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* 8. Tiket Bantuan */}
+              {/* 9. Layanan Bantuan ke Posko Pusat */}
               <button
                 onClick={() => navigateTo('tiket_bantuan')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
@@ -791,78 +492,16 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <Ticket className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Tiket Bantuan</span>
+                  <span className="leading-snug break-words">Bantuan ke Posko Pusat</span>
                 </div>
                 {openTicketCount > 0 && (
-                  <span className="shrink-0 ml-1 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">
+                  <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">
                     {openTicketCount}
                   </span>
                 )}
               </button>
 
-              {/* SECTION: MULTI-TENANT & KELOLA SEKOLAH */}
-              <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-wider text-purple-700 uppercase flex items-center justify-between">
-                <span className="leading-snug break-words">MULTI-TENANT & KELOLA SEKOLAH</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0 animate-ping ml-1"></span>
-              </div>
-
-              <div>
-                <button
-                  onClick={() => toggleSection('multitenant')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-700 hover:bg-purple-50 transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
-                    <span className="font-semibold text-purple-950 leading-snug break-words">Fitur Multi-Tenant</span>
-                  </div>
-                  {openSections.multitenant ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-purple-500 shrink-0 ml-1" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-purple-500 shrink-0 ml-1" />
-                  )}
-                </button>
-
-                {openSections.multitenant && (
-                  <div className="pl-7 pr-2.5 py-1 space-y-0.5 text-[11px]">
-                    <button
-                      onClick={() => navigateTo('multitenant', 'schools')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-purple-50 leading-snug break-words whitespace-normal transition ${
-                        (activeMenu === 'multitenant' || activeMenu === 'sync') && (activeSubMenu === 'schools' || !activeSubMenu)
-                          ? 'text-purple-700 font-bold bg-purple-100'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Manajemen Tenant (Sekolah Binaan)
-                    </button>
-                    <button
-                      onClick={() => navigateTo('multitenant', 'isolation')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-purple-50 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'multitenant' && activeSubMenu === 'isolation'
-                          ? 'text-purple-700 font-bold bg-purple-100'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Isolasi Data & Hak Akses (RLS)
-                    </button>
-                    <button
-                      onClick={() => navigateTo('multitenant', 'sync')}
-                      className={`w-full text-left py-1.5 px-2 rounded hover:bg-purple-50 leading-snug break-words whitespace-normal transition ${
-                        activeMenu === 'multitenant' && activeSubMenu === 'sync'
-                          ? 'text-purple-700 font-bold bg-purple-100'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      Pusat Sinkronisasi Multi-Tenant
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* SECTION: MANAJEMEN PENGGUNA */}
-              <div className="px-3 pt-4 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                MANAJEMEN PENGGUNA
-              </div>
-
+              {/* 10. Pengaturan Akun Admin Sekolah */}
               <button
                 onClick={() => navigateTo('pengaturan_akun')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
@@ -873,7 +512,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <UserCog className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Pengaturan Akun</span>
+                  <span className="leading-snug break-words">Akun Admin Sekolah</span>
                 </div>
               </button>
             </nav>
@@ -882,11 +521,22 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
 
         {/* 3. CENTER / MAIN VIEW AREA */}
         <main className="flex-1 p-4 sm:p-6 lg:p-7 overflow-y-auto max-w-7xl w-full mx-auto">
-          {/* DASHBOARD VIEW: Displays live announcements from Super Admin + Right Column Downloads/Contacts */}
+          {/* Sync Feedback Toast */}
+          {syncFeedback && (
+            <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{syncFeedback}</span>
+              </div>
+              <button onClick={() => setSyncFeedback(null)} className="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+          )}
+
+          {/* 1. BERANDA SEKOLAH VIEW */}
           {activeMenu === 'dashboard' && (
             <div className="space-y-4">
-              {/* Top Banner */}
-              <div className="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+              {/* Header Banner */}
+              <div className="bg-gradient-to-r from-blue-700 via-indigo-800 to-slate-900 rounded-2xl p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="px-2.5 py-0.5 bg-white/20 text-white rounded-md text-[10px] font-bold tracking-wider uppercase">
@@ -894,19 +544,21 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     </span>
                     <span className="text-white/60 text-xs">•</span>
                     <span className="text-xs font-mono text-blue-200">NPSN: {currentSchool?.npsn}</span>
+                    <span className="text-white/60 text-xs">•</span>
+                    <span className="text-xs text-emerald-300 font-semibold">Status: Terverifikasi Aktif</span>
                   </div>
                   <h1 className="text-xl sm:text-2xl font-black tracking-tight">
                     {currentSchool?.name || 'Sekolah Dasar'}
                   </h1>
                   <p className="text-xs text-blue-100 max-w-2xl mt-1">
-                    Terhubung langsung dengan Pusat Asesmen Pendidikan Kemendikdasmen RI • Token Aktif Hari Ini: <strong className="text-yellow-300 font-mono">{activeCenterToken.code}</strong>
+                    Kelola administrasi, rombel, peserta didik, kartu login, serta pelaksanaan asesmen mandiri untuk <strong>{currentSchool?.name}</strong>.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handlePerformSync}
-                    className="px-3.5 py-2 bg-white text-blue-800 hover:bg-blue-50 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition"
+                    className="px-3.5 py-2 bg-white text-blue-800 hover:bg-blue-50 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 text-blue-700 ${isSyncing ? 'animate-spin' : ''}`} />
                     <span>Sinkronkan ke Super Admin</span>
@@ -916,18 +568,24 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
 
               {/* 4 Stats Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                <div 
+                  onClick={() => navigateTo('peserta_didik')}
+                  className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+                >
                   <div>
-                    <div className="text-[11px] font-semibold text-slate-500 uppercase">Siswa Terdata</div>
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase">Siswa Sekolah Ini</div>
                     <div className="text-xl font-bold text-slate-900 mt-0.5">{students.length} Siswa</div>
-                    <div className="text-[10px] text-emerald-600 font-medium">Tervalidasi DNT Pusat</div>
+                    <div className="text-[10px] text-emerald-600 font-medium">Klik untuk kelola & cetak kartu →</div>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <Users className="w-5 h-5" />
                   </div>
                 </div>
 
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                <div 
+                  onClick={() => navigateTo('rombel_proktor')}
+                  className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+                >
                   <div>
                     <div className="text-[11px] font-semibold text-slate-500 uppercase">Rombel Kelas</div>
                     <div className="text-xl font-bold text-slate-900 mt-0.5">{classes.length} Kelas</div>
@@ -938,22 +596,28 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   </div>
                 </div>
 
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                <div 
+                  onClick={() => navigateTo('rombel_proktor')}
+                  className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+                >
                   <div>
-                    <div className="text-[11px] font-semibold text-slate-500 uppercase">Guru / Proktor</div>
-                    <div className="text-xl font-bold text-slate-900 mt-0.5">{proctors.length} Orang</div>
-                    <div className="text-[10px] text-amber-600 font-medium">Akun Proktor Aktif</div>
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase">Guru / Proktor Lab</div>
+                    <div className="text-xl font-bold text-slate-900 mt-0.5">{proctors.length} Guru</div>
+                    <div className="text-[10px] text-amber-600 font-medium">Ditugaskan di lab</div>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
                     <MonitorCheck className="w-5 h-5" />
                   </div>
                 </div>
 
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                <div 
+                  onClick={() => navigateTo('pelaksanaan_tes')}
+                  className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
+                >
                   <div>
                     <div className="text-[11px] font-semibold text-slate-500 uppercase">Token Sesi Pusat</div>
                     <div className="text-xl font-mono font-bold text-blue-700 mt-0.5">{activeCenterToken.code}</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Kelompok 1 (s/d 15.30 WIB)</div>
+                    <div className="text-[10px] text-slate-500 font-medium">Aktif s/d {activeCenterToken.validUntil}</div>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
                     <KeyRound className="w-5 h-5" />
@@ -961,7 +625,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                 </div>
               </div>
 
-              {/* Feed Announcements from Super Admin + Right Column Downloads */}
+              {/* Announcements Feed from Super Admin + Right Column Downloads */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 {/* Announcements Feed Received from Super Admin (8 cols) */}
                 <div className="lg:col-span-8 space-y-4">
@@ -969,11 +633,11 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></div>
                       <h2 className="text-sm font-bold text-slate-800 uppercase tracking-tight">
-                        Instruksi Resmi Diterima dari Super Admin (Posko Pusat)
+                        Instruksi Resmi Diterima dari Super Admin Pusat
                       </h2>
                     </div>
                     <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
-                      Sinkronisasi Otomatis
+                      Tersinkronisasi
                     </span>
                   </div>
 
@@ -982,7 +646,6 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                       key={item.id}
                       className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden"
                     >
-                      {/* Header Box: Blue accent bar matching screenshot */}
                       <div className="bg-[#1f73b7] text-white px-4 py-3 flex items-start gap-3">
                         <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
                           <Mail className="w-4 h-4 text-white" />
@@ -998,78 +661,44 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                               <Calendar className="w-3 h-3 opacity-80" />
                               <span>{item.date}</span>
                             </span>
+                            <span className="opacity-70">•</span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3 opacity-80" />
-                              <span>{item.time}</span>
+                              <span>{item.time} WIB</span>
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Content with highlighted text */}
-                      <div className="p-4 sm:p-5 text-xs text-slate-700 leading-relaxed space-y-3">
-                        {item.content.split('\n\n').map((paragraph, pIdx) => {
-                          if (paragraph.includes('pada Pukul 07.00 - 15.30 WIB')) {
-                            return (
-                              <div key={pIdx} className="space-y-1">
-                                {paragraph.split('\n').map((line, lIdx) => {
-                                  if (line.includes('pada Pukul 07.00 - 15.30 WIB')) {
-                                    const parts = line.split('pada Pukul 07.00 - 15.30 WIB');
-                                    return (
-                                      <p key={lIdx} className="text-slate-800">
-                                        {parts[0]}
-                                        <mark className="bg-sky-500 text-white font-bold px-1.5 py-0.5 rounded text-[11px] select-all">
-                                          pada Pukul 07.00 - 15.30 WIB
-                                        </mark>
-                                        {parts[1]}
-                                      </p>
-                                    );
-                                  }
-                                  return (
-                                    <p
-                                      key={lIdx}
-                                      className={
-                                        line.startsWith('A. MODA') || line.startsWith('B. MODA') || line.startsWith('Catatan')
-                                          ? 'font-bold text-slate-900 pt-1'
-                                          : 'text-slate-700'
-                                      }
-                                    >
-                                      {line}
-                                    </p>
-                                  );
-                                })}
-                              </div>
-                            );
-                          }
-                          return (
-                            <div key={pIdx} className="space-y-1">
-                              {paragraph.split('\n').map((line, lIdx) => (
-                                <p
-                                  key={lIdx}
-                                  className={
-                                    line.startsWith('A. MODA') || line.startsWith('B. MODA') || line.startsWith('Catatan')
-                                      ? 'font-bold text-slate-900 pt-1'
-                                      : 'text-slate-700'
-                                  }
-                                >
-                                  {line}
-                                </p>
-                              ))}
-                            </div>
-                          );
-                        })}
+                      <div className="p-4 text-xs text-slate-700 leading-relaxed whitespace-pre-line space-y-2 max-h-72 overflow-y-auto">
+                        {item.content.split('\n\n').map((paragraph, idx) => (
+                          <div key={idx} className="space-y-1">
+                            {paragraph.split('\n').map((line, lidx) => (
+                              <p
+                                key={lidx}
+                                className={
+                                  line.startsWith('A. MODA') || line.startsWith('B. MODA') || line.startsWith('Catatan')
+                                    ? 'font-bold text-slate-900 pt-1'
+                                    : 'text-slate-700'
+                                }
+                              >
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                        ))}
                       </div>
 
                       <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                         <span className="flex items-center gap-1">
                           <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Diterbitkan resmi oleh Pusat Asesmen Pendidikan</span>
+                          <span>Diterbitkan resmi oleh Pusat Asesmen Pendidikan Kemendikdasmen</span>
                         </span>
                         <button
-                          onClick={() => navigateTo('administrasi', 'token')}
+                          onClick={() => navigateTo('pelaksanaan_tes')}
                           className="text-blue-600 font-semibold hover:text-blue-800 flex items-center gap-1"
                         >
-                          <span>Buka Token Ujian</span>
+                          <span>Masuk Pengawasan Lab</span>
                           <ChevronRight className="w-3 h-3" />
                         </button>
                       </div>
@@ -1077,14 +706,14 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                   ))}
                 </div>
 
-                {/* Right Column (4 cols) */}
+                {/* Right Column: Helpdesk Officers & Technical Downloads (4 cols) */}
                 <div className="lg:col-span-4 space-y-4">
                   {/* Petugas Bantuan */}
                   <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
                     <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
                       <Headphones className="w-4 h-4 text-blue-600" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                        Petugas Bantuan Teknis
+                        Kontak Posko Pusat
                       </h3>
                     </div>
 
@@ -1110,24 +739,6 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                       </div>
 
                       <div
-                        onClick={() => setShowContactModal('Tim Teknis Provinsi')}
-                        className="py-3 px-2 flex items-center gap-3 hover:bg-slate-50 rounded-lg cursor-pointer transition group"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 border border-indigo-200">
-                          <Headphones className="w-5 h-5 text-indigo-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-slate-800 group-hover:text-blue-600 transition truncate">
-                            Tim Teknis Provinsi
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span>Standby</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
                         onClick={() => setShowContactModal('Posko Pusat Pusmendik')}
                         className="py-3 px-2 flex items-center gap-3 hover:bg-slate-50 rounded-lg cursor-pointer transition group"
                       >
@@ -1147,12 +758,12 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                     </div>
                   </div>
 
-                  {/* Download Berkas */}
+                  {/* Download Dokumen */}
                   <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
                     <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
                       <Download className="w-4 h-4 text-blue-600" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                        Download Berkas
+                        Unduh Juknis & Pedoman
                       </h3>
                     </div>
 
@@ -1192,8 +803,8 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             </div>
           )}
 
-          {/* DATA MASTER VIEW */}
-          {activeMenu === 'master' && (
+          {/* 2. PROFIL & SARPRAS SEKOLAH */}
+          {activeMenu === 'profil_sekolah' && (
             <SchoolDataMasterView
               key={`${activeMenu}-${activeSubMenu}`}
               schoolId={schoolId}
@@ -1201,8 +812,8 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             />
           )}
 
-          {/* DATA PESERTA VIEW */}
-          {activeMenu === 'peserta' && (
+          {/* 3. PESERTA DIDIK (SISWA) */}
+          {activeMenu === 'peserta_didik' && (
             <SchoolDataPesertaView
               key={`${activeMenu}-${activeSubMenu}`}
               schoolId={schoolId}
@@ -1210,17 +821,35 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             />
           )}
 
-          {/* REKAP & LAPORAN VIEW */}
-          {activeMenu === 'rekap' && (
-            <SchoolRekapLaporanView
+          {/* 4. ROMBEL & GURU PROKTOR */}
+          {activeMenu === 'rombel_proktor' && (
+            <SchoolDataMasterView
               key={`${activeMenu}-${activeSubMenu}`}
               schoolId={schoolId}
-              subTab={activeSubMenu || 'kehadiran'}
+              subTab="sarpras"
             />
           )}
 
-          {/* SEKOLAH BLANK SPOT VIEW */}
-          {activeMenu === 'blankspot' && (
+          {/* 5. BANK SOAL & PENJADWALAN */}
+          {activeMenu === 'bank_soal_jadwal' && (
+            <SchoolDataMasterView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab="banks"
+            />
+          )}
+
+          {/* 6. PELAKSANAAN & PENGAWASAN UJIAN */}
+          {activeMenu === 'pelaksanaan_tes' && (
+            <SchoolAdministrasiTesView
+              key={`${activeMenu}-${activeSubMenu}`}
+              schoolId={schoolId}
+              subTab={activeSubMenu || 'monitor'}
+            />
+          )}
+
+          {/* 7. KONEKSI JARINGAN & BLANK SPOT */}
+          {activeMenu === 'jaringan_blankspot' && (
             <SchoolBlankSpotView
               key={`${activeMenu}-${activeSubMenu}`}
               schoolId={schoolId}
@@ -1228,68 +857,143 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             />
           )}
 
-          {/* ADMINISTRASI TES VIEW */}
-          {activeMenu === 'administrasi' && (
-            <SchoolAdministrasiTesView
+          {/* 8. HASIL UJIAN & BERITA ACARA (BAP) */}
+          {activeMenu === 'hasil_laporan' && (
+            <SchoolRekapLaporanView
               key={`${activeMenu}-${activeSubMenu}`}
               schoolId={schoolId}
-              subTab={activeSubMenu || 'token'}
+              subTab={activeSubMenu || 'kehadiran'}
             />
           )}
 
-          {/* SIMULASI VIEW */}
-          {activeMenu === 'simulasi' && (
-            <SchoolSimulasiView
-              key={`${activeMenu}-${activeSubMenu}`}
-              schoolId={schoolId}
-              subTab={activeSubMenu || 'proktor'}
-            />
+          {/* 9. LAYANAN BANTUAN KE POSKO PUSAT (HELPDESK) */}
+          {activeMenu === 'tiket_bantuan' && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    Layanan Bantuan ke Posko Super Admin Pusat
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    Kirim pengaduan kendala teknis (reset login siswa, permohonan token, gangguan server) langsung ke tim Posko Pusat Pusmendik.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowTicketModal(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Buat Tiket Bantuan Baru</span>
+                </button>
+              </div>
+
+              {/* Tickets List */}
+              <div className="space-y-3">
+                {allTickets.length === 0 ? (
+                  <div className="bg-white p-10 rounded-xl border border-slate-200 text-center text-slate-400 text-xs shadow-xs">
+                    <Ticket className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                    Belum ada tiket bantuan yang dibuat oleh sekolah Anda.
+                  </div>
+                ) : (
+                  allTickets.map((t) => (
+                    <div
+                      key={t.id}
+                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                            {t.id}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                              t.status === 'open'
+                                ? 'bg-amber-100 text-amber-800'
+                                : t.status === 'in_progress'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {t.status === 'open'
+                              ? 'Menunggu Respon Pusat'
+                              : t.status === 'in_progress'
+                              ? 'Sedang Ditangani Pusat'
+                              : 'Selesai / Teratasi'}
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-500 uppercase">
+                            Kategori: {t.category}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          Dibuat: {new Date(t.created_at).toLocaleDateString('id-ID')}
+                        </div>
+                      </div>
+
+                      <h3 className="text-sm font-bold text-slate-900">{t.subject}</h3>
+                      <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 leading-relaxed">
+                        {t.description}
+                      </p>
+
+                      {t.response && (
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+                            <CheckCircle className="w-4 h-4 text-emerald-600" />
+                            <span>Tanggapan Resmi dari Super Admin Pusat:</span>
+                          </div>
+                          <p className="leading-relaxed pl-5">{t.response}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           )}
 
-          {/* FITUR MULTI-TENANT & SYNC VIEW */}
-          {(activeMenu === 'multitenant' || activeMenu === 'sync') && (
-            <SchoolMultiTenantView
-              key={`${activeMenu}-${activeSubMenu}`}
-              schoolId={schoolId}
-              subTab={activeSubMenu || 'schools'}
-              onOpenSqlModal={onOpenSqlModal}
-            />
-          )}
-
-          {/* PENGATURAN AKUN VIEW */}
+          {/* 10. PENGATURAN AKUN VIEW */}
           {activeMenu === 'pengaturan_akun' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4 max-w-xl">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
-                <UserCog className="w-4 h-4 text-blue-600" />
-                Pengaturan Akun Admin Sekolah
-              </h2>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-5 max-w-xl">
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                <UserCog className="w-5 h-5 text-blue-600" />
+                <h2 className="text-sm font-bold text-slate-900">
+                  Pengaturan Akun Administrator {currentSchool?.name}
+                </h2>
+              </div>
+
               <div className="space-y-3 text-xs">
                 <div>
-                  <label className="block font-semibold mb-1">Nama Lengkap Admin</label>
+                  <label className="block font-semibold mb-1 text-slate-700">Nama Penanggung Jawab Admin</label>
                   <input
                     type="text"
                     disabled
                     value={user?.full_name || 'Admin Sekolah'}
-                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg"
+                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-slate-800 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Email Sekolah</label>
+                  <label className="block font-semibold mb-1 text-slate-700">Email Login Resmi</label>
                   <input
                     type="email"
                     disabled
                     value={user?.email || 'admin@sekolah.id'}
-                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg font-mono"
+                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg font-mono text-slate-800"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Sekolah Terkait</label>
+                  <label className="block font-semibold mb-1 text-slate-700">Satuan Pendidikan Terdaftar</label>
                   <input
                     type="text"
                     disabled
-                    value={currentSchool?.name || 'Sekolah'}
-                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg"
+                    value={`${currentSchool?.name || 'Sekolah'} (NPSN: ${currentSchool?.npsn})`}
+                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-slate-800"
                   />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700">Hak Akses</label>
+                  <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 font-medium">
+                    Akses Khusus Admin Satuan Pendidikan (Single-Tenant: {currentSchool?.name}). Anda hanya memiliki wewenang mengelola data internal sekolah ini.
+                  </div>
                 </div>
               </div>
             </div>
@@ -1297,230 +1001,133 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
         </main>
       </div>
 
-      {/* MODAL 1: Tambah Siswa */}
-      {showAddStudentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <form onSubmit={handleAddStudent} className="bg-white rounded-2xl max-w-md w-full p-6 text-slate-800 space-y-4 text-xs">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-sm text-slate-900">Tambah Peserta Didik Baru</h3>
-              <button type="button" onClick={() => setShowAddStudentModal(false)}>✕</button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="block font-semibold mb-1">Nama Lengkap Siswa</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Muhammad Bintang"
-                  value={newStudent.full_name}
-                  onChange={(e) => setNewStudent({ ...newStudent, full_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-semibold mb-1">NISN (10 Digit)</label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={10}
-                    placeholder="0123456789"
-                    value={newStudent.nisn}
-                    onChange={(e) => setNewStudent({ ...newStudent, nisn: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Jenis Kelamin</label>
-                  <select
-                    value={newStudent.gender}
-                    onChange={(e) => setNewStudent({ ...newStudent, gender: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  >
-                    <option value="L">Laki-laki (L)</option>
-                    <option value="P">Perempuan (P)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button type="button" onClick={() => setShowAddStudentModal(false)} className="px-3 py-1.5 border border-slate-300 rounded-lg">Batal</button>
-              <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded-lg font-bold shadow-xs">Simpan & Sinkronkan</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* MODAL 2: Tambah Paket Ujian */}
-      {showAddExamModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!newExamTitle) return;
-              const newEx: Exam = {
-                id: 'exam-' + Math.random().toString(36).substring(2, 8),
-                school_id: schoolId,
-                subject_id: newExamSubject,
-                subject_name: subjects.find((s) => s.id === newExamSubject)?.name || 'Mata Pelajaran',
-                question_bank_id: questionBanks[0]?.id || 'qb-01',
-                title: newExamTitle,
-                grade_level: 6,
-                duration_minutes: newExamDuration,
-                passing_grade: 75,
-                status: 'scheduled',
-                randomize_questions: true,
-                randomize_options: true,
-                created_by: user?.id || 'admin',
-                created_at: new Date().toISOString(),
-              };
-              tenantStore.addExam(newEx);
-              setExams(tenantStore.getExams(schoolId));
-              setShowAddExamModal(false);
-              setNewExamTitle('');
-              alert(`Paket ujian "${newEx.title}" berhasil dibuat dan dikirimkan ke Super Admin.`);
-            }}
-            className="bg-white rounded-2xl max-w-md w-full p-6 text-slate-800 space-y-4 text-xs"
-          >
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-sm text-slate-900">Jadwalkan Paket Ujian Baru</h3>
-              <button type="button" onClick={() => setShowAddExamModal(false)}>✕</button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="block font-semibold mb-1">Judul Paket Ujian</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Asesmen Sumatif Akhir Jenjang Matematika"
-                  value={newExamTitle}
-                  onChange={(e) => setNewExamTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-semibold mb-1">Mata Pelajaran</label>
-                  <select
-                    value={newExamSubject}
-                    onChange={(e) => setNewExamSubject(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  >
-                    {subjects.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Durasi (Menit)</label>
-                  <input
-                    type="number"
-                    value={newExamDuration}
-                    onChange={(e) => setNewExamDuration(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button type="button" onClick={() => setShowAddExamModal(false)} className="px-3 py-1.5 border border-slate-300 rounded-lg">Batal</button>
-              <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded-lg font-bold shadow-xs">Jadwalkan Ujian</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* MODAL 3: Buat Tiket ke SuperAdmin */}
+      {/* MODAL BUAT TIKET KE SUPERADMIN */}
       {showTicketModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <form onSubmit={handleCreateTicket} className="bg-white rounded-2xl max-w-md w-full p-6 text-slate-800 space-y-4 text-xs">
+          <form onSubmit={handleCreateTicket} className="bg-white rounded-2xl max-w-md w-full p-6 text-slate-800 space-y-4 text-xs animate-in fade-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-sm text-slate-900">Kirim Tiket ke Super Admin Pusat</h3>
-              <button type="button" onClick={() => setShowTicketModal(false)}>✕</button>
+              <div className="flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-blue-600" />
+                <h3 className="font-bold text-sm text-slate-900">Buat Tiket Bantuan ke Pusat</h3>
+              </div>
+              <button type="button" onClick={() => setShowTicketModal(false)} className="text-slate-400 hover:text-slate-600 text-base font-bold">✕</button>
             </div>
+
             <div className="space-y-3">
               <div>
-                <label className="block font-semibold mb-1">Kategori Masalah</label>
+                <label className="block font-semibold mb-1 text-slate-700">Kategori Kendala *</label>
                 <select
                   value={ticketCategory}
                   onChange={(e) => setTicketCategory(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800"
                 >
-                  <option value="RESET_LOGIN">Reset Login Siswa</option>
-                  <option value="TOKEN">Token Ujian Kedaluwarsa</option>
-                  <option value="JARINGAN">Kendala Jaringan ISP</option>
-                  <option value="SERVER_OFFLINE">Komputer Proktor Mati / Restart</option>
+                  <option value="RESET_LOGIN">Reset Login Siswa Terputus</option>
+                  <option value="TOKEN">Kendala Token / Alokasi Sesi</option>
+                  <option value="JARINGAN">Kendala Jaringan / Permohonan VHD</option>
+                  <option value="SERVER_OFFLINE">Sinkronisasi Server Gagal</option>
                   <option value="LAINNYA">Lainnya</option>
                 </select>
               </div>
+
               <div>
-                <label className="block font-semibold mb-1">Judul Kendala</label>
+                <label className="block font-semibold mb-1 text-slate-700">Subjek Kendala *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Siswa terputus saat pengerjaan subtes literasi"
+                  placeholder="Contoh: Siswa terputus saat subtes numerasi"
                   value={ticketSubject}
                   onChange={(e) => setTicketSubject(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label className="block font-semibold mb-1">Rincian Masalah</label>
+                <label className="block font-semibold mb-1 text-slate-700">Rincian / Deskripsi Masalah *</label>
                 <textarea
-                  rows={4}
                   required
-                  placeholder="Jelaskan kendala yang dialami di lab sekolah..."
+                  rows={4}
+                  placeholder="Jelaskan detail kendala, nomor peserta siswa yang terdampak, atau kode error..."
                   value={ticketDescription}
                   onChange={(e) => setTicketDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                ></textarea>
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             </div>
+
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button type="button" onClick={() => setShowTicketModal(false)} className="px-3 py-1.5 border border-slate-300 rounded-lg">Batal</button>
-              <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded-lg font-bold shadow-xs">Kirim ke Super Admin</button>
+              <button
+                type="button"
+                onClick={() => setShowTicketModal(false)}
+                className="px-3.5 py-1.5 border border-slate-300 rounded-lg text-slate-700 font-semibold"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-xs transition"
+              >
+                Kirim Tiket ke Pusat
+              </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* MODAL 4: Zoom Print Card */}
-      {printingStudent && (
+      {/* MODAL UNDUH BERKAS PREVIEW */}
+      {selectedFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 text-slate-800 space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-sm text-slate-900">Kartu Login Peserta Ujian</h3>
-              <button onClick={() => setPrintingStudent(null)}>✕</button>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-slate-800 space-y-4 text-center animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto">
+              <Download className="w-6 h-6" />
             </div>
-            <div className="border-2 border-slate-800 rounded-xl p-4 space-y-3">
-              <div className="flex items-center gap-3 border-b-2 border-slate-800 pb-2">
-                <TutWuriLogo size={40} />
-                <div>
-                  <div className="text-[10px] font-bold uppercase text-slate-500">KEMENTERIAN PENDIDIKAN DASAR & MENENGAH</div>
-                  <div className="text-xs font-black text-slate-900">KARTU PESERTA TKA 2026</div>
-                </div>
-              </div>
-              <div className="space-y-1 text-xs">
-                <div>Nama Siswa: <strong>{printingStudent.full_name}</strong></div>
-                <div>NISN: <span className="font-mono font-bold text-blue-700">{printingStudent.nisn}</span></div>
-                <div>Sekolah: {currentSchool?.name} (NPSN: {currentSchool?.npsn})</div>
-                <div>Rombel: {printingStudent.class_name || 'Kelas 6-A'}</div>
-              </div>
-              <div className="bg-slate-100 p-2.5 rounded-lg border border-slate-300 font-mono text-xs grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[9px] font-sans font-bold text-slate-500 block">USERNAME</span>
-                  <span className="font-bold text-blue-700">U26{printingStudent.nisn}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-sans font-bold text-slate-500 block">PASSWORD</span>
-                  <span className="font-bold text-emerald-700">P@ss{printingStudent.nisn.slice(-4)}</span>
-                </div>
-              </div>
+            <h3 className="font-bold text-sm text-slate-900">{selectedFile.name}</h3>
+            <p className="text-xs text-slate-500">{selectedFile.description}</p>
+            <div className="p-2 bg-slate-50 rounded border border-slate-200 text-[11px] text-slate-600">
+              Ukuran: {selectedFile.size} • Versi: {selectedFile.version || 'Resmi Pusmendik'}
             </div>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setPrintingStudent(null)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs">Tutup</button>
-              <button onClick={() => window.print()} className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold">Cetak Kartu</button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="flex-1 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={() => {
+                  alert(`Mengunduh file: ${selectedFile.name}`);
+                  setSelectedFile(null);
+                }}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold"
+              >
+                Unduh Sekarang
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONTAK POSKO */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-slate-800 space-y-4 text-center animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center mx-auto">
+              <Headphones className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-sm text-slate-900">{showContactModal}</h3>
+            <p className="text-xs text-slate-500">
+              Layanan siaga tanggap darurat teknis penyelenggaraan tes AKSARA CBT.
+            </p>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
+              <div className="text-slate-500">Call Center / WhatsApp:</div>
+              <div className="font-bold text-blue-700 font-mono text-sm">0811-2345-6789</div>
+              <div className="text-[10px] text-slate-400">Senin - Minggu: 06.00 - 18.00 WIB</div>
+            </div>
+            <button
+              onClick={() => setShowContactModal(null)}
+              className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold"
+            >
+              Tutup
+            </button>
           </div>
         </div>
       )}
