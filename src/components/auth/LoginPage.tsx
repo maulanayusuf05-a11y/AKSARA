@@ -122,10 +122,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
          ========================================================================= */}
       <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-6 sm:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 py-8 my-auto">
         
-        {/* LEFT COLUMN: Logo Tut Wuri Handayani + AKSARA */}
+        {/* LEFT COLUMN: Logo Tut Wuri Handayani + SINTESA */}
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-4">
           
-          {/* Logo Tut Wuri Handayani + Brand Text: AKSARA */}
+          {/* Logo Tut Wuri Handayani + Brand Text: SINTESA */}
           <div className="flex items-center gap-3.5">
             <div className="w-13 h-13 rounded-full bg-[#0288d1] flex items-center justify-center p-1.5 shadow-sm shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full text-white" fill="none">
@@ -141,24 +141,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
             <div className="flex flex-col text-left">
               <span className="text-3xl font-black tracking-tight text-slate-900 leading-none">
-                AKSARA
+                SINTESA
               </span>
               <span className="text-[11px] font-semibold text-slate-600 mt-1 tracking-tight">
-                Asesmen dan Kompetensi Siswa Terarah
+                Sistem Informasi Tes dan Asesmen
               </span>
             </div>
           </div>
 
-          {/* Welcome Heading (Clean, matching reference screenshot) */}
+          {/* Welcome Heading */}
           <div className="pt-3">
             <h1 className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-slate-900 leading-[1.2] tracking-tight">
               Selamat Datang Di
             </h1>
             <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-slate-900 leading-[1.2] tracking-tight">
-              CBT AKSARA
+              CBT SINTESA
             </h2>
             <p className="text-xs text-slate-500 mt-2.5 max-w-sm leading-relaxed">
-              Sistem Ujian Digital Sekolah Dasar terpadu dengan autentikasi tunggal multi-peran dan isolasi data per satuan pendidikan.
+              SINTESA - Sistem Informasi Tes dan Asesmen terpadu dengan autentikasi tunggal multi-peran dan isolasi data per satuan pendidikan.
             </p>
           </div>
         </div>

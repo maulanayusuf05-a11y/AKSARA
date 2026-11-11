@@ -1,4 +1,47 @@
-import { Announcement, HelpdeskTicket, ProctorComputer, TestGroupAllocation, DownloadableFile, BlankSpotRequest } from '../types/tka';
+import { Announcement, HelpdeskTicket, ProctorComputer, TestGroupAllocation, DownloadableFile, BlankSpotRequest, SchoolPermissionRequest } from '../types/tka';
+
+const INITIAL_PERMISSION_REQUESTS: SchoolPermissionRequest[] = [
+  {
+    id: 'IZIN-2026-001',
+    school_id: 'sdn-01-menteng-uuid-001',
+    school_name: 'SDN 01 Menteng Jakarta',
+    npsn: '20101001',
+    proctor_or_admin: 'Hendra Wijaya, S.Pd',
+    request_type: 'UJIAN_SUSULAN',
+    title: 'Permohonan Izin Ujian Susulan ASAJ Matematika (3 Siswa Sakit)',
+    reason: '3 Siswa kelas 6-A berhalangan hadir saat sesi utama karena rawat inap demam berdarah. Surat dokter terlampir.',
+    student_count: 3,
+    status: 'pending',
+    submitted_at: '2026-02-24T07:45:00Z',
+  },
+  {
+    id: 'IZIN-2026-002',
+    school_id: 'sd-alazhar-rawamangun-uuid-002',
+    school_name: 'SD Swasta Islam Terpadu Cendekia',
+    npsn: '20102002',
+    proctor_or_admin: 'Ustadz Fauzi Rahman',
+    request_type: 'SESI_TAMBAHAN',
+    title: 'Permohonan Buka Sesi Tambahan Siang (Lab Siber Al-Battani)',
+    reason: 'Penambahan daya tampung lab komputer untuk mengakomodasi 15 peserta gelombang kedua agar tidak berdesakan.',
+    student_count: 15,
+    status: 'pending',
+    submitted_at: '2026-02-24T08:10:00Z',
+  },
+  {
+    id: 'IZIN-2026-003',
+    school_id: 'sd-cibinong-bogor-uuid-003',
+    school_name: 'SD Negeri 05 Cibinong Bogor',
+    npsn: '20205003',
+    proctor_or_admin: 'Dra. Hj. Siti Nurhaliza',
+    request_type: 'RESET_LOGIN_MASSAL',
+    title: 'Permohonan Izin Buka Kunci Peserta Sesi 1 (Insiden Pemadaman PLN)',
+    reason: 'Genset sekolah terlambat menyala saat pemadaman tiba-tiba dari PLN, 24 peserta terputus bersamaan di pertengahan tes.',
+    student_count: 24,
+    status: 'approved',
+    submitted_at: '2026-02-23T10:30:00Z',
+    reviewed_at: '2026-02-23T10:45:00Z',
+  },
+];
 
 const INITIAL_BLANK_SPOT_REQUESTS: BlankSpotRequest[] = [
   {
@@ -336,6 +379,40 @@ class TkaStore {
         reviewed_at: new Date().toISOString(),
       };
       this.set('blank_spot_requests', all);
+    }
+  }
+
+  // School Permission Requests (Sekolah yang Meminta Izin)
+  getPermissionRequests(schoolId?: string | null): SchoolPermissionRequest[] {
+    const all = this.get<SchoolPermissionRequest[]>('permission_requests', INITIAL_PERMISSION_REQUESTS);
+    if (!schoolId) return all;
+    return all.filter((r) => r.school_id === schoolId);
+  }
+
+  addPermissionRequest(req: Omit<SchoolPermissionRequest, 'id' | 'submitted_at' | 'status'>): SchoolPermissionRequest {
+    const all = this.getPermissionRequests();
+    const newReq: SchoolPermissionRequest = {
+      ...req,
+      id: `IZIN-2026-${String(all.length + 1).padStart(3, '0')}`,
+      status: 'pending',
+      submitted_at: new Date().toISOString(),
+    };
+    all.unshift(newReq);
+    this.set('permission_requests', all);
+    return newReq;
+  }
+
+  updatePermissionRequest(id: string, status: 'approved' | 'rejected', rejection_note?: string): void {
+    const all = this.getPermissionRequests();
+    const idx = all.findIndex((r) => r.id === id);
+    if (idx >= 0) {
+      all[idx] = {
+        ...all[idx],
+        status,
+        rejection_note: status === 'rejected' ? rejection_note : undefined,
+        reviewed_at: new Date().toISOString(),
+      };
+      this.set('permission_requests', all);
     }
   }
 }

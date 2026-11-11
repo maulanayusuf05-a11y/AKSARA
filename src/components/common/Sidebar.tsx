@@ -125,11 +125,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       {/* Footer Info */}
       <div className="p-4 border-t border-slate-800 text-[11px] text-slate-500">
         <div className="flex items-center justify-between mb-1">
-          <span>AKSARA CBT v1.0</span>
+          <span>SINTESA v1.0</span>
           <span className="text-emerald-400 font-mono">Online</span>
         </div>
         <div className="text-[10px] text-slate-600">
-          Asesmen dan Kompetensi Siswa Terarah
+          Sistem Informasi Tes dan Asesmen
         </div>
       </div>
     </aside>

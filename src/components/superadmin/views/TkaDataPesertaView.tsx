@@ -383,7 +383,7 @@ export const TkaDataPesertaView: React.FC<TkaDataPesertaViewProps> = ({
             <div>
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <FileCheck2 className="w-4 h-4 text-blue-600" />
-                Daftar Nominasi Tetap (DNT) Peserta Ujian Nasional
+                Daftar Nominasi Tetap (DNT) Peserta Ujian SINTESA
               </h2>
               <p className="text-xs text-slate-500">
                 Pencatatan resmi peserta ujian yang telah divalidasi oleh Dinas Pendidikan

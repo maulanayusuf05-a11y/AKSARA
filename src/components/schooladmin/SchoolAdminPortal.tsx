@@ -1115,7 +1115,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             </div>
             <h3 className="font-bold text-sm text-slate-900">{showContactModal}</h3>
             <p className="text-xs text-slate-500">
-              Layanan siaga tanggap darurat teknis penyelenggaraan tes AKSARA CBT.
+              Layanan siaga tanggap darurat teknis penyelenggaraan tes SINTESA.
             </p>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
               <div className="text-slate-500">Call Center / WhatsApp:</div>

@@ -49,14 +49,14 @@ export const Navbar: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base tracking-tight text-slate-900">
-                  AKSARA<span className="text-blue-600 font-bold ml-1">CBT</span>
+                  SINTESA<span className="text-blue-600 font-bold ml-1">CBT</span>
                 </span>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
                   Multi-Tenant
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium leading-none mt-0.5">
-                Asesmen dan Kompetensi Siswa Terarah
+                Sistem Informasi Tes dan Asesmen
               </p>
             </div>
           </div>
@@ -88,7 +88,7 @@ export const Navbar: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-slate-800 leading-tight">
-                    Pusat Pengendali Nasional
+                    Pusat Pengendali SINTESA
                   </div>
                   <div className="text-[11px] text-slate-500">
                     Kementerian Pendidikan Dasar & Menengah RI

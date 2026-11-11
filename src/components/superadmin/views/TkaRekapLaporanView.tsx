@@ -73,7 +73,7 @@ export const TkaRekapLaporanView: React.FC<TkaRekapLaporanViewProps> = ({
             <div>
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
-                Rekapitulasi Kehadiran Peserta Ujian Nasional
+                Rekapitulasi Kehadiran Peserta Ujian SINTESA
               </h2>
               <p className="text-xs text-slate-500">
                 Tingkat partisipasi kehadiran siswa SD pada pelaksanaan simulasi dan asesmen

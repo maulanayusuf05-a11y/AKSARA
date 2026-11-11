@@ -81,7 +81,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ active
             <span className="text-xs text-purple-200">Kementerian Pendidikan Dasar & Menengah RI</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-            Dashboard Pemantauan Nasional
+            Dashboard Pemantauan SINTESA
           </h1>
           <p className="text-xs text-purple-200/90 max-w-2xl mt-1">
             Pengawasan terpusat ekosistem ujian sekolah dasar lintas sekolah dengan perlindungan data multi-tenant dan audit log keamanan.
@@ -139,7 +139,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ active
             <GraduationCap className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-slate-900">{allStudents.length}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Siswa Terdata Nasional</div>
+          <div className="text-[11px] text-slate-500 mt-1">Siswa Terdata SINTESA</div>
         </div>
 
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs col-span-2 lg:col-span-1">

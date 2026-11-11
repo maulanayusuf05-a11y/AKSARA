@@ -133,7 +133,7 @@ export const RegisterSchoolPage: React.FC<RegisterSchoolPageProps> = ({ onBackTo
               <div>
                 <h1 className="text-xl font-bold tracking-tight">Pendaftaran Sekolah Baru (SD / MI)</h1>
                 <p className="text-xs text-blue-100">
-                  Sistem Registrasi Otomatis & Terisolasi Multi-Tenant EduUjian SD
+                  SINTESA - Sistem Informasi Tes dan Asesmen Multi-Tenant
                 </p>
               </div>
             </div>

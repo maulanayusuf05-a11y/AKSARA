@@ -3,13 +3,7 @@ import { tkaStore } from '../../../lib/tkaStore';
 import { HelpdeskTicket } from '../../../types/tka';
 import {
   Ticket,
-  MessageSquare,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Plus,
   Send,
-  Filter,
   User,
   ShieldCheck,
 } from 'lucide-react';
@@ -19,15 +13,6 @@ export const TkaTiketBantuanView: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = useState<HelpdeskTicket | null>(null);
   const [replyText, setReplyText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-
-  // New ticket modal
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [schoolName, setSchoolName] = useState('SDN 01 Menteng Jakarta');
-  const [proctorName, setProctorName] = useState('Ibu Ratna Dewi, S.Pd');
-  const [subject, setSubject] = useState('');
-  const [category, setCategory] = useState<HelpdeskTicket['category']>('RESET_LOGIN');
-  const [priority, setPriority] = useState<HelpdeskTicket['priority']>('high');
-  const [description, setDescription] = useState('');
 
   const filteredTickets = tickets.filter(
     (t) => statusFilter === 'all' || t.status === statusFilter
@@ -49,27 +34,6 @@ export const TkaTiketBantuanView: React.FC = () => {
     alert(`Tanggapan berhasil dikirim dan tiket ${selectedTicket.id} ditandai Selesai.`);
   };
 
-  const handleCreateTicket = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!subject.trim() || !description.trim()) return;
-
-    const newT = tkaStore.addTicket({
-      school_id: 'sdn-01-menteng-uuid-001',
-      school_name: schoolName,
-      proctor_name: proctorName,
-      subject: subject.trim(),
-      category,
-      priority,
-      status: 'open',
-      description: description.trim(),
-    });
-
-    setTickets(tkaStore.getTickets());
-    setShowNewModal(false);
-    setSubject('');
-    setDescription('');
-  };
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -80,7 +44,7 @@ export const TkaTiketBantuanView: React.FC = () => {
             Layanan Pengaduan & Tiket Bantuan Teknis Proktor
           </h2>
           <p className="text-xs text-slate-500">
-            Penanganan terpusat untuk kendala ujian digital, reset sesi peserta, sinkronisasi VHD, dan token
+            Penanganan terpusat untuk kendala ujian digital, reset sesi peserta, sinkronisasi VHD, dan token dari admin sekolah
           </p>
         </div>
 
@@ -95,14 +59,6 @@ export const TkaTiketBantuanView: React.FC = () => {
             <option value="in_progress">Sedang Diproses</option>
             <option value="resolved">Selesai (Resolved)</option>
           </select>
-
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Buat Tiket Baru</span>
-          </button>
         </div>
       </div>
 
@@ -234,97 +190,6 @@ export const TkaTiketBantuanView: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* MODAL: Buat Tiket Baru */}
-      {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <form
-            onSubmit={handleCreateTicket}
-            className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 text-slate-800 space-y-4 text-xs"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Ticket className="w-5 h-5 text-blue-600" />
-                <h3 className="text-sm font-bold text-slate-900">Buat Tiket Kendala Teknis</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowNewModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-sm p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block font-semibold mb-1">Satuan Pendidikan</label>
-                <input
-                  type="text"
-                  value={schoolName}
-                  onChange={(e) => setSchoolName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Kategori Kendala</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                >
-                  <option value="RESET_LOGIN">Reset Login Peserta (Siswa Terputus)</option>
-                  <option value="TOKEN">Token Tidak Muncul / Kedaluwarsa</option>
-                  <option value="JARINGAN">Koneksi Internet / Latensi Tinggi</option>
-                  <option value="SERVER_OFFLINE">Komputer Proktor / Listrik Mati</option>
-                  <option value="LAINNYA">Lainnya</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Judul Ringkas Kendala</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Siswa NISN 0123xx terkunci setelah reload browser"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Deskripsi Lengkap Masalah</label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder="Jelaskan kronologi kejadian, subtes yang dikerjakan, dan langkah yang sudah dicoba..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                ></textarea>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowNewModal(false)}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg font-semibold"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-xs"
-              >
-                Kirim Pengaduan
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 };

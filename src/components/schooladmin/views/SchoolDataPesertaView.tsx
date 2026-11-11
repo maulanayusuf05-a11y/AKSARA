@@ -381,7 +381,7 @@ export const SchoolDataPesertaView: React.FC<SchoolDataPesertaViewProps> = ({
                     <TutWuriLogo size={36} className="shrink-0" />
                     <div className="min-w-0 flex-1 text-center">
                       <div className="font-extrabold text-[11px] text-slate-900 uppercase tracking-tight">
-                        KARTU PESERTA ASESMEN & KOMPETENSI (AKSARA)
+                        KARTU PESERTA ASESMEN SINTESA
                       </div>
                       <div className="text-[10px] text-slate-600 font-bold">{school?.name}</div>
                       <div className="text-[9px] text-slate-400 font-mono">NPSN: {school?.npsn} • Tahun 2026</div>

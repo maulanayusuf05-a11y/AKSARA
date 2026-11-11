@@ -77,7 +77,7 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
         >
           <div>
             <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-              Total Sekolah Nasional
+              Total Sekolah SINTESA
             </div>
             <div className="text-xl font-bold text-slate-900 mt-0.5">{schools.length} Sekolah</div>
             <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
@@ -121,7 +121,7 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
             </div>
             <div className="text-xl font-bold text-slate-900 mt-0.5">{students.length} Siswa</div>
             <div className="text-[10px] text-blue-600 font-medium flex items-center gap-1 mt-0.5">
-              <span>Terdata di DNT Nasional</span>
+              <span>Terdata di DNT SINTESA</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -407,7 +407,7 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
               </span>
             </div>
             <h4 className="text-xs font-bold leading-snug">
-              Kelola Isolasi & Distribusi Soal Nasional
+              Kelola Isolasi & Distribusi Soal SINTESA
             </h4>
             <p className="text-[11px] text-slate-300 leading-normal">
               Akses cepat pengawasan seluruh sekolah dasar, monitoring audit log, dan sinkronisasi bank soal.

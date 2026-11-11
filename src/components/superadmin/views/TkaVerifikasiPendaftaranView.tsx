@@ -109,7 +109,7 @@ export const TkaVerifikasiPendaftaranView: React.FC<TkaVerifikasiPendaftaranView
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
               Tinjau, validasi keabsahan NPSN Dapodik, dan setujui permohonan pendaftaran satuan pendidikan
-              agar dapat bergabung dan mengakses ekosistem ujian digital AKSARA CBT.
+              agar dapat bergabung dan mengakses ekosistem ujian digital SINTESA.
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">

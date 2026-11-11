@@ -312,7 +312,7 @@ export const SchoolRekapLaporanView: React.FC<SchoolRekapLaporanViewProps> = ({
 
             <div className="space-y-2 text-slate-700 leading-relaxed">
               <p>
-                Pada hari ini, <strong>Selasa, 24 Februari 2026</strong>, telah dilaksanakan Asesmen dan Kompetensi Siswa Terarah (AKSARA CBT) di Satuan Pendidikan:
+                Pada hari ini, <strong>Selasa, 24 Februari 2026</strong>, telah dilaksanakan SINTESA (Sistem Informasi Tes dan Asesmen) di Satuan Pendidikan:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-white border border-slate-200 rounded-xl">
                 <div>• Nama Satuan Pendidikan: <strong>{school?.name}</strong></div>

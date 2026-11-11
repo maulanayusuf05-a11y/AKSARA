@@ -361,7 +361,7 @@ export const TkaMultiTenantView: React.FC<TkaMultiTenantViewProps> = ({
           <div className="pb-3 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
               <Radio className="w-4 h-4 text-blue-600" />
-              Pusat Sinkronisasi Multi-Tenant & Siaran Nasional
+              Pusat Sinkronisasi Multi-Tenant & Siaran SINTESA
             </h2>
             <p className="text-xs text-slate-500">
               Kirimkan pemberitahuan resmi dan distribusikan paket bank soal secara serentak ke seluruh tenant sekolah
@@ -418,7 +418,7 @@ export const TkaMultiTenantView: React.FC<TkaMultiTenantViewProps> = ({
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
               <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
                 <Layers className="w-4 h-4 text-purple-600" />
-                <span>Distribusi Bank Soal Nasional</span>
+                <span>Distribusi Bank Soal SINTESA</span>
               </div>
               <p className="text-slate-600 text-[11px] leading-relaxed">
                 Mendorong paket soal ujian Literasi, Numerasi, dan Survei Lingkungan Belajar terbaru dari Pusat Asesmen ke dalam skema bank soal masing-masing sekolah secara otomatis.

@@ -147,7 +147,7 @@ export const TkaKelolaSekolahView: React.FC<TkaKelolaSekolahViewProps> = ({ onOp
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold uppercase tracking-wider">
-              Pangkalan Data Nasional
+              Pangkalan Data SINTESA
             </span>
             <span className="text-slate-400 text-xs">•</span>
             <span className="text-xs text-slate-500">Cakupan Seluruh Indonesia</span>

@@ -72,3 +72,20 @@ export interface BlankSpotRequest {
   submitted_at: string;
   reviewed_at?: string;
 }
+
+export interface SchoolPermissionRequest {
+  id: string;
+  school_id: string;
+  school_name: string;
+  npsn: string;
+  proctor_or_admin: string;
+  request_type: 'UJIAN_SUSULAN' | 'SESI_TAMBAHAN' | 'RESET_LOGIN_MASSAL' | 'MODA_ASESMEN' | 'DISPENSASI_LAB' | 'TOKEN_DARURAT';
+  title: string;
+  reason: string;
+  student_count?: number;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_note?: string;
+  submitted_at: string;
+  reviewed_at?: string;
+}
+
