@@ -4,6 +4,7 @@ import { TutWuriLogo } from '../common/TutWuriLogo';
 import { TkaDashboardView } from './views/TkaDashboardView';
 import { TkaVerifikasiPendaftaranView } from './views/TkaVerifikasiPendaftaranView';
 import { TkaKelolaSekolahView } from './views/TkaKelolaSekolahView';
+import { TkaDataPesertaView } from './views/TkaDataPesertaView';
 import { TkaRekapLaporanView } from './views/TkaRekapLaporanView';
 import { TkaAdministrasiTesView } from './views/TkaAdministrasiTesView';
 import { TkaTiketBantuanView } from './views/TkaTiketBantuanView';
@@ -21,6 +22,7 @@ import {
   BarChart2,
   Ticket,
   Building2,
+  Users,
   ShieldCheck,
   Radio,
   UserCog,
@@ -71,6 +73,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
 
   // Data
   const schools = tenantStore.getSchools();
+  const students = tenantStore.getStudents();
   const pendingSchools = schools.filter((s) => s.status === 'pending');
   const pendingCount = pendingSchools.length;
 
@@ -252,7 +255,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
                     ? 'bg-[#294c7a] font-bold text-white shadow-xs'
                     : 'text-slate-200 hover:bg-[#23426b]'
                 }`}
-                title="Menuju Dashboard SINTESA"
+                title="Menuju Dashboard"
               >
                 <Home className="w-3.5 h-3.5 shrink-0" />
                 <span>Dashboard</span>
@@ -288,7 +291,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
                 PENGAWASAN SINTESA
               </div>
 
-              {/* 1. Dashboard SINTESA */}
+              {/* 1. Dashboard (sebelumnya: Dashboard SINTESA) */}
               <button
                 onClick={() => navigateTo('dashboard')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
@@ -299,22 +302,22 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <LayoutDashboard className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Dashboard SINTESA</span>
+                  <span className="leading-snug break-words">Dashboard</span>
                 </div>
               </button>
 
-              {/* 2. Verifikasi Pendaftaran Sekolah */}
+              {/* 2. Data Master (sebelumnya: Verifikasi Pendaftaran) */}
               <button
-                onClick={() => navigateTo('verifikasi_pendaftaran')}
+                onClick={() => navigateTo('data_master')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'verifikasi_pendaftaran'
+                  activeMenu === 'data_master' || activeMenu === 'verifikasi_pendaftaran'
                     ? 'bg-amber-100 text-amber-900 font-bold border border-amber-300'
                     : 'text-slate-700 hover:bg-amber-50/60'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span className="leading-snug break-words">Verifikasi Pendaftaran</span>
+                  <span className="leading-snug break-words">Data Master</span>
                 </div>
                 {pendingCount > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
@@ -323,34 +326,34 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
                 )}
               </button>
 
-              {/* 3. Manajemen Satuan Pendidikan (Seluruh Sekolah) */}
+              {/* 3. Data Peserta (sebelumnya: Satuan Pendidikan) */}
               <button
-                onClick={() => navigateTo('kelola_sekolah')}
+                onClick={() => navigateTo('data_peserta')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'kelola_sekolah'
+                  activeMenu === 'data_peserta' || activeMenu === 'kelola_sekolah'
                     ? 'bg-blue-50 text-blue-700 font-bold'
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Satuan Pendidikan</span>
+                  <Users className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="leading-snug break-words">Data Peserta</span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-semibold">{schools.length}</span>
+                <span className="text-[10px] text-slate-400 font-semibold">{students.length} Siswa</span>
               </button>
 
-              {/* 4. Monitoring Ujian SINTESA */}
+              {/* 4. Rekap dan Laporan (sebelumnya: Monitoring Ujian SINTESA) */}
               <button
-                onClick={() => navigateTo('monitoring_nasional')}
+                onClick={() => navigateTo('rekap_laporan')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'monitoring_nasional'
+                  activeMenu === 'rekap_laporan' || activeMenu === 'monitoring_nasional'
                     ? 'bg-blue-50 text-blue-700 font-bold'
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <Radio className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span className="leading-snug break-words">Monitoring Ujian SINTESA</span>
+                  <span className="leading-snug break-words">Rekap dan Laporan</span>
                 </div>
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
               </button>
@@ -454,16 +457,20 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
             <TkaDashboardView onNavigate={(menu, sub) => navigateTo(menu, sub)} />
           )}
 
-          {activeMenu === 'verifikasi_pendaftaran' && (
+          {(activeMenu === 'data_master' || activeMenu === 'verifikasi_pendaftaran') && (
             <TkaVerifikasiPendaftaranView onSchoolApproved={() => {}} />
+          )}
+
+          {(activeMenu === 'data_peserta' || activeMenu === 'peserta') && (
+            <TkaDataPesertaView subTab={activeSubMenu || 'peserta'} />
           )}
 
           {activeMenu === 'kelola_sekolah' && (
             <TkaKelolaSekolahView onOpenSqlModal={onOpenSqlModal} />
           )}
 
-          {activeMenu === 'monitoring_nasional' && (
-            <TkaAdministrasiTesView subTab="monitor" />
+          {(activeMenu === 'rekap_laporan' || activeMenu === 'monitoring_nasional') && (
+            <TkaRekapLaporanView subTab={activeSubMenu || 'kehadiran'} />
           )}
 
           {activeMenu === 'administrasi_pusat' && (

@@ -275,6 +275,21 @@ class TkaStore {
     return newAnn;
   }
 
+  updateAnnouncement(id: string, updates: Partial<Announcement>): void {
+    const list = this.getAnnouncements();
+    const idx = list.findIndex((a) => a.id === id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...updates };
+      this.set('announcements', list);
+    }
+  }
+
+  deleteAnnouncement(id: string): void {
+    const list = this.getAnnouncements();
+    const filtered = list.filter((a) => a.id !== id);
+    this.set('announcements', filtered);
+  }
+
   // Tickets
   getTickets(schoolId?: string | null): HelpdeskTicket[] {
     const all = this.get<HelpdeskTicket[]>('tickets', INITIAL_TICKETS);

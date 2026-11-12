@@ -23,6 +23,9 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
+  Pencil,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface TkaDashboardViewProps {
@@ -30,18 +33,35 @@ interface TkaDashboardViewProps {
 }
 
 export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }) => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>(tkaStore.getAnnouncements());
+  const [announcements, setAnnouncements] = useState<Announcement[]>(() => tkaStore.getAnnouncements());
   const [activeToken] = useState(tkaStore.getActiveToken());
   const [selectedFile, setSelectedFile] = useState<DownloadableFile | null>(null);
   const [showContactModal, setShowContactModal] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Add Announcement state
   const [showAddAnnModal, setShowAddAnnModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('Posko Pusat');
   const [newContent, setNewContent] = useState('');
 
+  // Edit Announcement state
+  const [editingAnn, setEditingAnn] = useState<Announcement | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editAuthor, setEditAuthor] = useState('');
+  const [editContent, setEditContent] = useState('');
+
+  // Delete Announcement state
+  const [annToDelete, setAnnToDelete] = useState<Announcement | null>(null);
+
   const schools = tenantStore.getSchools();
   const students = tenantStore.getStudents();
   const proctors = tenantStore.getProctors();
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const handleCreateAnnouncement = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,10 +77,42 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
       content: newContent.trim(),
     });
 
-    setAnnouncements([created, ...announcements]);
+    setAnnouncements(tkaStore.getAnnouncements());
     setNewTitle('');
     setNewContent('');
     setShowAddAnnModal(false);
+    showToast('Pengumuman baru berhasil diterbitkan.');
+  };
+
+  const handleOpenEdit = (ann: Announcement) => {
+    setEditingAnn(ann);
+    setEditTitle(ann.title);
+    setEditAuthor(ann.author);
+    setEditContent(ann.content);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAnn || !editTitle.trim() || !editContent.trim()) return;
+
+    tkaStore.updateAnnouncement(editingAnn.id, {
+      title: editTitle.trim(),
+      author: editAuthor.trim() || 'Posko Pusat',
+      content: editContent.trim(),
+    });
+
+    setAnnouncements(tkaStore.getAnnouncements());
+    setEditingAnn(null);
+    showToast('Perubahan pengumuman berhasil disimpan.');
+  };
+
+  const handleConfirmDelete = () => {
+    if (!annToDelete) return;
+    tkaStore.deleteAnnouncement(annToDelete.id);
+    setAnnouncements(tkaStore.getAnnouncements());
+    const deletedTitle = annToDelete.title;
+    setAnnToDelete(null);
+    showToast(`Pengumuman "${deletedTitle.slice(0, 30)}..." telah dihapus.`);
   };
 
   const handleDownloadFile = (file: DownloadableFile) => {
@@ -168,34 +220,63 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
             </button>
           </div>
 
-          {announcements.map((item, index) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden"
-            >
-              {/* Header Box: Blue accent bar matching screenshot */}
-              <div className="bg-[#1f73b7] text-white px-4 py-3 flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <Mail className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-tight leading-snug">
-                    {item.title}
-                  </h3>
-                  <div className="flex items-center gap-3 text-[11px] text-blue-100 mt-1">
-                    <span className="font-medium">{item.author}</span>
-                    <span className="opacity-70">•</span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 opacity-80" />
-                      <span>{item.date}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 opacity-80" />
-                      <span>{item.time}</span>
-                    </span>
+          {announcements.length === 0 ? (
+            <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
+              <Mail className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+              <p className="font-semibold text-slate-700">Belum ada pengumuman resmi</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Gunakan tombol "Buat Pengumuman" di atas untuk menerbitkan instruksi kepada seluruh sekolah.
+              </p>
+            </div>
+          ) : (
+            announcements.map((item, index) => (
+              <div
+                key={item.id}
+                className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden"
+              >
+                {/* Header Box: Blue accent bar matching screenshot */}
+                <div className="bg-[#1f73b7] text-white px-4 py-3 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <Mail className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xs sm:text-sm font-bold uppercase tracking-tight leading-snug break-words">
+                      {item.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-blue-100 mt-1">
+                      <span className="font-medium">{item.author}</span>
+                      <span className="opacity-70">•</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 opacity-80" />
+                        <span>{item.date}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 opacity-80" />
+                        <span>{item.time}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Super Admin Announcement Actions: Edit & Delete */}
+                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                    <button
+                      onClick={() => handleOpenEdit(item)}
+                      title="Edit Pengumuman"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/15 hover:bg-white/25 active:scale-95 text-white rounded-md text-xs font-medium transition cursor-pointer border border-white/20"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Edit</span>
+                    </button>
+                    <button
+                      onClick={() => setAnnToDelete(item)}
+                      title="Hapus Pengumuman"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-500/80 hover:bg-rose-600 active:scale-95 text-white rounded-md text-xs font-medium transition cursor-pointer border border-rose-400/40"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Hapus</span>
+                    </button>
                   </div>
                 </div>
-              </div>
 
               {/* Announcement Body Content */}
               <div className="p-4 sm:p-5 text-xs text-slate-700 leading-relaxed space-y-3 font-sans">
@@ -263,7 +344,7 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
               <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                 <div className="flex items-center gap-1 text-slate-500">
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Diverifikasi oleh Pusat Asesmen Pendidikan Kemendikdasmen</span>
+                  <span>SINTESA Pusat (Sistem Informasi Tes dan Asesmen)</span>
                 </div>
                 <button
                   onClick={() => onNavigate('adm_token')}
@@ -274,8 +355,9 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+          ))
+        )}
+      </div>
 
         {/* RIGHT COLUMN: Contacts & Downloads (4 cols) */}
         <div className="lg:col-span-4 space-y-4">
@@ -630,6 +712,158 @@ export const TkaDashboardView: React.FC<TkaDashboardViewProps> = ({ onNavigate }
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* MODAL: Edit Announcement */}
+      {editingAnn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <form
+            onSubmit={handleSaveEdit}
+            className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-xl w-full p-6 text-slate-800 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Edit Pengumuman Resmi Posko
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Perubahan langsung diperbarui untuk seluruh sekolah & proktor
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingAnn(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 text-base cursor-pointer rounded-lg hover:bg-slate-100 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Judul Pengumuman
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 uppercase font-semibold text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Nama Penerbit / Posko
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editAuthor}
+                  onChange={(e) => setEditAuthor(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Isi Instruksi & Prosedur Pengumuman
+                </label>
+                <textarea
+                  rows={8}
+                  required
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-sans leading-relaxed text-slate-800"
+                ></textarea>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setEditingAnn(null)}
+                className="px-3.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-100 text-slate-700 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>Simpan Perubahan</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL: Delete Confirmation Dialog */}
+      {annToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 text-slate-800 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Hapus Pengumuman?
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 text-xs">
+              <div className="text-[10px] text-slate-500 font-medium">Judul Pengumuman:</div>
+              <div className="font-bold text-slate-800 mt-0.5 line-clamp-2">
+                {annToDelete.title}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1.5">
+                Diterbitkan oleh: <span className="font-semibold text-slate-700">{annToDelete.author}</span> • {annToDelete.date}
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Pengumuman ini akan segera dihapus dari tampilan dashboard Super Admin serta portal seluruh proktor dan sekolah.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAnnToDelete(null)}
+                className="px-3.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-100 text-slate-700 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Ya, Hapus Pengumuman</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING TOAST NOTIFICATION */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium border border-slate-700 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

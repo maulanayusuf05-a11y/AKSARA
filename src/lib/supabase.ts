@@ -557,6 +557,21 @@ class MultiTenantStore {
     this.set('classes', list);
   }
 
+  updateClass(classroom: ClassRoom): void {
+    const list = this.get<ClassRoom[]>('classes', INITIAL_CLASSES);
+    const idx = list.findIndex((c) => c.id === classroom.id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...classroom };
+      this.set('classes', list);
+    }
+  }
+
+  deleteClass(classId: string): void {
+    const list = this.get<ClassRoom[]>('classes', INITIAL_CLASSES);
+    const filtered = list.filter((c) => c.id !== classId);
+    this.set('classes', filtered);
+  }
+
   // Students
   getStudents(schoolId?: string | null): Student[] {
     const all = this.get<Student[]>('students', INITIAL_STUDENTS);
@@ -568,6 +583,21 @@ class MultiTenantStore {
     const list = this.get<Student[]>('students', INITIAL_STUDENTS);
     list.push(student);
     this.set('students', list);
+  }
+
+  updateStudent(student: Student): void {
+    const list = this.get<Student[]>('students', INITIAL_STUDENTS);
+    const idx = list.findIndex((s) => s.id === student.id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...student };
+      this.set('students', list);
+    }
+  }
+
+  deleteStudent(studentId: string): void {
+    const list = this.get<Student[]>('students', INITIAL_STUDENTS);
+    const filtered = list.filter((s) => s.id !== studentId);
+    this.set('students', filtered);
   }
 
   // Proctors

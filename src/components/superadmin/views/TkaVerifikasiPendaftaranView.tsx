@@ -96,7 +96,7 @@ export const TkaVerifikasiPendaftaranView: React.FC<TkaVerifikasiPendaftaranView
             <div className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[11px] font-bold tracking-wide uppercase flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                Kewenangan Khusus Super Admin
+                Data Master • Posko Pusat
               </span>
               {pendingCount > 0 && (
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black uppercase tracking-wider animate-pulse">
@@ -105,7 +105,7 @@ export const TkaVerifikasiPendaftaranView: React.FC<TkaVerifikasiPendaftaranView
               )}
             </div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              Verifikasi Pendaftaran Sekolah Baru
+              Data Master • Verifikasi Pendaftaran Sekolah Baru
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
               Tinjau, validasi keabsahan NPSN Dapodik, dan setujui permohonan pendaftaran satuan pendidikan

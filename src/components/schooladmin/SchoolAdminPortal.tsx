@@ -72,6 +72,8 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
   // Navigation State
   const [activeMenu, setActiveMenu] = useState<string>('dashboard');
   const [activeSubMenu, setActiveSubMenu] = useState<string>('');
+  const [dataMasterExpanded, setDataMasterExpanded] = useState<boolean>(true);
+  const [dataPesertaExpanded, setDataPesertaExpanded] = useState<boolean>(true);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [showRoleDropdown, setShowRoleDropdown] = useState<boolean>(false);
 
@@ -107,6 +109,12 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
   const navigateTo = (menu: string, sub = '') => {
     setActiveMenu(menu);
     setActiveSubMenu(sub);
+    if (menu === 'data_master' || menu === 'profil_sekolah') {
+      setDataMasterExpanded(true);
+    }
+    if (menu === 'data_peserta' || menu === 'peserta_didik') {
+      setDataPesertaExpanded(true);
+    }
   };
 
   // Perform Bidirectional Sync with SuperAdmin
@@ -185,17 +193,8 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
           </div>
         </div>
 
-        {/* Right: Sync Status, Demo Switcher, Avatar */}
+        {/* Right: Demo Switcher, Avatar */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Live Sync Button with SuperAdmin */}
-          <button
-            onClick={handlePerformSync}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-semibold transition"
-            title="Klik untuk menyinkronkan data dengan Super Admin sekarang"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>Sinkronkan ke Pusat</span>
-          </button>
 
           {/* Quick Demo Switch Role */}
           <div className="relative">
@@ -363,38 +362,163 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                 </div>
               </button>
 
-              {/* 2. Profil & Sarpras Sekolah */}
-              <button
-                onClick={() => navigateTo('profil_sekolah')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'profil_sekolah'
-                    ? 'bg-blue-50 text-blue-700 font-bold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Profil & Sarpras Sekolah</span>
-                </div>
-              </button>
+              {/* 2. DATA MASTER (Collapsible Accordion with Submenus) */}
+              <div className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    if (activeMenu !== 'data_master') {
+                      navigateTo('data_master', 'data_sekolah');
+                    }
+                    setDataMasterExpanded(!dataMasterExpanded);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                    activeMenu === 'data_master' || activeMenu === 'profil_sekolah'
+                      ? 'bg-blue-50 text-blue-700 font-bold'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <Database className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="leading-snug break-words">Data Master</span>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                      dataMasterExpanded ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
 
-              {/* 3. Data Peserta Didik (Siswa) */}
-              <button
-                onClick={() => navigateTo('peserta_didik')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'peserta_didik'
-                    ? 'bg-blue-50 text-blue-700 font-bold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <Users className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Peserta Didik (Siswa)</span>
-                </div>
-                <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                  {students.length}
-                </span>
-              </button>
+                {dataMasterExpanded && (
+                  <div className="pl-6 pr-1 py-1 space-y-1 border-l-2 border-blue-200 ml-4 my-0.5">
+                    <button
+                      onClick={() => navigateTo('data_master', 'data_sekolah')}
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        (activeMenu === 'data_master' || activeMenu === 'profil_sekolah') &&
+                        (activeSubMenu === 'data_sekolah' || activeSubMenu === 'schools' || !activeSubMenu)
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Building2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>Data Sekolah</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('data_master', 'data_kelas')}
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        (activeMenu === 'data_master' || activeMenu === 'profil_sekolah') &&
+                        (activeSubMenu === 'data_kelas' || activeSubMenu === 'classes')
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5 shrink-0" />
+                      <span>Data Kelas</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('data_master', 'data_siswa')}
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        (activeMenu === 'data_master' || activeMenu === 'profil_sekolah') &&
+                        (activeSubMenu === 'data_siswa' || activeSubMenu === 'students')
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5 shrink-0" />
+                      <span>Data Siswa</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. DATA PESERTA (Collapsible Accordion with Submenus) */}
+              <div className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    if (activeMenu !== 'data_peserta') {
+                      navigateTo('data_peserta', 'peserta_ujian');
+                    }
+                    setDataPesertaExpanded(!dataPesertaExpanded);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                    activeMenu === 'data_peserta' || activeMenu === 'peserta_didik'
+                      ? 'bg-blue-50 text-blue-700 font-bold'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <Users className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="leading-snug break-words">Data Peserta</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
+                      {students.length}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                        dataPesertaExpanded ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {dataPesertaExpanded && (
+                  <div className="pl-6 pr-1 py-1 space-y-1 border-l-2 border-blue-200 ml-4 my-0.5">
+                    <button
+                      onClick={() => navigateTo('data_peserta', 'peserta_ujian')}
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        (activeMenu === 'data_peserta' || activeMenu === 'peserta_didik') &&
+                        (activeSubMenu === 'peserta_ujian' || activeSubMenu === 'peserta' || !activeSubMenu)
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5 shrink-0" />
+                      <span>Peserta Ujian</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('data_peserta', 'generate_nomor')}
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        (activeMenu === 'data_peserta' || activeMenu === 'peserta_didik') &&
+                        (activeSubMenu === 'generate_nomor' || activeSubMenu === 'generate')
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                      <span>Generate Nomor Peserta</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('data_peserta', 'cetak_kartu')}
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        (activeMenu === 'data_peserta' || activeMenu === 'peserta_didik') &&
+                        (activeSubMenu === 'cetak_kartu' || activeSubMenu === 'kartu')
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Printer className="w-3.5 h-3.5 shrink-0" />
+                      <span>Cetak Kartu Login Peserta</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('data_peserta', 'rekap_dnt')}
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        (activeMenu === 'data_peserta' || activeMenu === 'peserta_didik') &&
+                        (activeSubMenu === 'rekap_dnt' || activeSubMenu === 'dnt')
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <FileCheck2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>Rekap DNT</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* 4. Rombel & Guru Proktor */}
               <button
@@ -556,24 +680,21 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={handlePerformSync}
-                    className="px-3.5 py-2 bg-white text-blue-800 hover:bg-blue-50 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 text-blue-700 ${isSyncing ? 'animate-spin' : ''}`} />
-                    <span>Sinkronkan ke Super Admin</span>
-                  </button>
+                  <span className="px-3.5 py-2 bg-white/10 backdrop-blur-xs text-white border border-white/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>SINTESA Terhubung</span>
+                  </span>
                 </div>
               </div>
 
               {/* 4 Stats Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div 
-                  onClick={() => navigateTo('peserta_didik')}
+                  onClick={() => navigateTo('data_peserta', 'peserta_ujian')}
                   className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 transition"
                 >
                   <div>
-                    <div className="text-[11px] font-semibold text-slate-500 uppercase">Siswa Sekolah Ini</div>
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase">Data Peserta Ujian</div>
                     <div className="text-xl font-bold text-slate-900 mt-0.5">{students.length} Siswa</div>
                     <div className="text-[10px] text-emerald-600 font-medium">Klik untuk kelola & cetak kartu →</div>
                   </div>
@@ -692,7 +813,7 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
                       <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                         <span className="flex items-center gap-1">
                           <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Diterbitkan resmi oleh Pusat Asesmen Pendidikan Kemendikdasmen</span>
+                          <span>Diterbitkan resmi oleh SINTESA Pusat (Sistem Informasi Tes dan Asesmen)</span>
                         </span>
                         <button
                           onClick={() => navigateTo('pelaksanaan_tes')}
@@ -803,21 +924,21 @@ export const SchoolAdminPortal: React.FC<SchoolAdminPortalProps> = ({ onOpenSqlM
             </div>
           )}
 
-          {/* 2. PROFIL & SARPRAS SEKOLAH */}
-          {activeMenu === 'profil_sekolah' && (
+          {/* 2. DATA MASTER */}
+          {(activeMenu === 'data_master' || activeMenu === 'profil_sekolah') && (
             <SchoolDataMasterView
               key={`${activeMenu}-${activeSubMenu}`}
               schoolId={schoolId}
-              subTab={activeSubMenu || 'schools'}
+              subTab={activeSubMenu || 'data_sekolah'}
             />
           )}
 
-          {/* 3. PESERTA DIDIK (SISWA) */}
-          {activeMenu === 'peserta_didik' && (
+          {/* 3. DATA PESERTA */}
+          {(activeMenu === 'data_peserta' || activeMenu === 'peserta_didik') && (
             <SchoolDataPesertaView
               key={`${activeMenu}-${activeSubMenu}`}
               schoolId={schoolId}
-              subTab={activeSubMenu || 'peserta'}
+              subTab={activeSubMenu || 'peserta_ujian'}
             />
           )}
 

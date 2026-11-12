@@ -11,6 +11,8 @@ import {
   Filter,
   FileCheck2,
   AlertCircle,
+  Radio,
+  Eye,
 } from 'lucide-react';
 
 interface TkaRekapLaporanViewProps {
@@ -23,6 +25,7 @@ export const TkaRekapLaporanView: React.FC<TkaRekapLaporanViewProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<string>(subTab);
   const [schools] = useState<School[]>(tenantStore.getSchools());
   const [students] = useState<Student[]>(tenantStore.getStudents());
+  const [sessions, setSessions] = useState(tenantStore.getSessions());
   const [selectedSchoolId, setSelectedSchoolId] = useState('all');
 
   return (
@@ -63,6 +66,18 @@ export const TkaRekapLaporanView: React.FC<TkaRekapLaporanViewProps> = ({
         >
           <FileText className="w-4 h-4" />
           <span>Berita Acara Pelaksanaan (BAP)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('monitor')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition ${
+            activeSubTab === 'monitor'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Radio className="w-4 h-4 text-rose-500" />
+          <span>Monitoring Ujian Real-Time</span>
         </button>
       </div>
 
@@ -263,6 +278,84 @@ export const TkaRekapLaporanView: React.FC<TkaRekapLaporanViewProps> = ({
                 <div className="font-bold underline">Dr. H. Bambang Sujatmiko, M.Pd.</div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MONITORING UJIAN REAL-TIME */}
+      {activeSubTab === 'monitor' && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
+                Live Monitoring Peserta Ujian SINTESA (Nasional)
+              </h2>
+              <p className="text-xs text-slate-500">
+                Pemantauan sesi pengerjaan ujian siswa secara real-time, sisa waktu, IP klien, dan status koneksi
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                <span>{sessions.filter(s => s.status === 'in_progress').length} Aktif Mengerjakan</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 uppercase font-bold border-y border-slate-200">
+                <tr>
+                  <th className="py-2.5 px-3">Nama Siswa & NISN</th>
+                  <th className="py-2.5 px-3">Satuan Pendidikan</th>
+                  <th className="py-2.5 px-3">Rombel</th>
+                  <th className="py-2.5 px-3">IP Klien</th>
+                  <th className="py-2.5 px-3">Sisa Waktu</th>
+                  <th className="py-2.5 px-3">Status Pengerjaan</th>
+                  <th className="py-2.5 px-3 text-right">Aksi Proktor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {sessions.map((sess) => (
+                  <tr key={sess.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3 px-3">
+                      <div className="font-bold text-slate-900">{sess.student_name}</div>
+                      <div className="text-[11px] font-mono text-slate-500">NISN: {sess.student_nisn}</div>
+                    </td>
+                    <td className="py-3 px-3 font-medium text-slate-700">SDN 01 Menteng Jakarta</td>
+                    <td className="py-3 px-3 text-slate-600">{sess.class_name}</td>
+                    <td className="py-3 px-3 font-mono text-slate-500">{sess.ip_address || '192.168.1.15'}</td>
+                    <td className="py-3 px-3 font-mono font-bold text-blue-700">
+                      {Math.floor(sess.remaining_seconds / 60)} menit
+                    </td>
+                    <td className="py-3 px-3">
+                      {sess.status === 'in_progress' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
+                          Sedang Mengerjakan
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          <CheckCircle className="w-3 h-3 text-emerald-600" />
+                          Selesai Dikirim
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => {
+                          alert(`Sesi siswa ${sess.student_name} telah di-reset. Siswa dapat login kembali.`);
+                        }}
+                        className="px-2.5 py-1 text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded text-[11px] font-semibold transition"
+                      >
+                        Reset Login
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
