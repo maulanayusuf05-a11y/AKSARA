@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { TutWuriLogo } from '../common/TutWuriLogo';
 
 interface LoginPageProps {
   onGoToRegister: () => void;
   onOpenForgotPassword: () => void;
-  onOpenSqlModal: () => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({
   onGoToRegister,
   onOpenForgotPassword,
-  onOpenSqlModal,
 }) => {
   const { login } = useAuth();
 
@@ -46,7 +45,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#fcfdfe] relative overflow-hidden flex flex-col justify-between select-none">
+    <div className="min-h-screen w-full bg-[#fcfdfe] relative overflow-hidden flex flex-col select-none">
       {/* =========================================================================
           BACKGROUND GRAPHICS:
           1. Overlapping Angled Rounded Rectangles on Bottom-Left
@@ -115,56 +114,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </svg>
       </div>
 
-
-
       {/* =========================================================================
-          MAIN LOGIN VIEWPORT (Exact Composition, Production Clean)
+          MAIN LOGIN VIEWPORT (Aligned to top and elevated)
          ========================================================================= */}
-      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-6 sm:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 py-8 my-auto">
+      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-6 sm:px-12 flex flex-col lg:flex-row items-center lg:items-start justify-between gap-10 lg:gap-14 pt-8 sm:pt-12 lg:pt-16 pb-12">
         
         {/* LEFT COLUMN: Logo Tut Wuri Handayani + SINTESA */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-4">
+        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 lg:pt-1">
           
           {/* Logo Tut Wuri Handayani + Brand Text: SINTESA */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-13 h-13 rounded-full bg-[#0288d1] flex items-center justify-center p-1.5 shadow-sm shrink-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full text-white" fill="none">
-                <circle cx="50" cy="50" r="46" stroke="white" strokeWidth="4" />
-                <path
-                  d="M50 18 L55 34 L75 30 L62 45 L78 60 L58 58 L50 82 L42 58 L22 60 L38 45 L25 30 L45 34 Z"
-                  fill="white"
-                />
-                <circle cx="50" cy="46" r="7" fill="#fbbf24" />
-                <path d="M48 30 Q50 20 52 30 Z" fill="#ef4444" />
-              </svg>
-            </div>
+          <div className="flex items-center gap-4">
+            <TutWuriLogo size={56} className="drop-shadow-sm" />
 
             <div className="flex flex-col text-left">
-              <span className="text-3xl font-black tracking-tight text-slate-900 leading-none">
+              <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 leading-none">
                 SINTESA
               </span>
-              <span className="text-[11px] font-semibold text-slate-600 mt-1 tracking-tight">
+              <span className="text-xs sm:text-sm font-medium text-slate-600 mt-1 tracking-tight">
                 Sistem Informasi Tes dan Asesmen
               </span>
             </div>
           </div>
 
-          {/* Welcome Heading */}
-          <div className="pt-3">
-            <h1 className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-slate-900 leading-[1.2] tracking-tight">
+          {/* Welcome Heading & Optimized Description */}
+          <div className="space-y-3">
+            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-bold text-slate-900 leading-[1.15] tracking-tight">
               Selamat Datang Di
             </h1>
-            <h2 className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-slate-900 leading-[1.2] tracking-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#0288d1] leading-[1.15] tracking-tight">
               CBT SINTESA
             </h2>
-            <p className="text-xs text-slate-500 mt-2.5 max-w-sm leading-relaxed">
-              SINTESA - Sistem Informasi Tes dan Asesmen terpadu dengan autentikasi tunggal multi-peran dan isolasi data per satuan pendidikan.
+            <p className="text-sm sm:text-base text-slate-600 max-w-lg leading-relaxed font-normal pt-1">
+              Sistem Informasi Tes dan Asesmen terpadu berbasis digital untuk pelaksanaan ujian yang tertib, objektif, dan transparan dengan sistem autentikasi multi-peran serta isolasi data per satuan pendidikan.
             </p>
           </div>
         </div>
 
         {/* RIGHT COLUMN: The Floating White Sign In Card (Production Ready) */}
-        <div className="w-full lg:w-[410px] max-w-md">
+        <div className="w-full lg:w-[410px] max-w-md mx-auto lg:mx-0">
           <div className="bg-white rounded-3xl shadow-[0_15px_45px_rgba(0,0,0,0.08)] border border-slate-100/90 p-8 sm:p-9">
             
             {/* Card Header: Sign In & Subtitle */}
@@ -267,60 +254,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 Daftar Sekolah Baru
               </button>
             </div>
-
-            {/* Quick 1-Click Login for Testing */}
-            <div className="mt-4 pt-3 border-t border-dashed border-slate-200">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2">
-                Akses Uji Coba (1-Klik Langsung Masuk)
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIdentifier('superadmin');
-                    setPassword('password123');
-                    login('superadmin', 'password123');
-                  }}
-                  className="px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold text-center transition"
-                >
-                  👑 Super Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIdentifier('admin.sdn01@jakarta.sekolah.id');
-                    setPassword('password123');
-                    login('admin.sdn01@jakarta.sekolah.id', 'password123');
-                  }}
-                  className="px-2 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold text-center transition"
-                >
-                  🏫 Admin Sekolah
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIdentifier('proktor1@sdn01menteng.sch.id');
-                    setPassword('password123');
-                    login('proktor1@sdn01menteng.sch.id', 'password123');
-                  }}
-                  className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-bold text-center transition"
-                >
-                  🎧 Proktor Lab
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIdentifier('0123456781');
-                    setPassword('password123');
-                    login('0123456781', 'password123');
-                  }}
-                  className="px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold text-center transition"
-                >
-                  🎒 Siswa Peserta
-                </button>
-              </div>
-            </div>
-
           </div>
         </div>
 

@@ -45,7 +45,6 @@ const MainAppContent: React.FC = () => {
           <LoginPage
             onGoToRegister={() => setAuthView('register')}
             onOpenForgotPassword={() => setShowForgotModal(true)}
-            onOpenSqlModal={() => setShowSqlModal(true)}
           />
         ) : (
           <RegisterSchoolPage
