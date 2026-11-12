@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { TutWuriLogo } from '../common/TutWuriLogo';
 import { TkaDashboardView } from './views/TkaDashboardView';
+import { TkaDataMasterView } from './views/TkaDataMasterView';
 import { TkaVerifikasiPendaftaranView } from './views/TkaVerifikasiPendaftaranView';
 import { TkaKelolaSekolahView } from './views/TkaKelolaSekolahView';
 import { TkaDataPesertaView } from './views/TkaDataPesertaView';
@@ -40,6 +41,8 @@ import {
   X,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
+  Database,
   ShieldAlert,
 } from 'lucide-react';
 
@@ -54,6 +57,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
   const [activeMenu, setActiveMenu] = useState<string>('dashboard');
   const [activeSubMenu, setActiveSubMenu] = useState<string>('');
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [dataMasterExpanded, setDataMasterExpanded] = useState<boolean>(true);
 
   // Modals state for Alert (Notification) & User (School Permission Requests)
   const [showAlertModal, setShowAlertModal] = useState<boolean>(false);
@@ -306,41 +310,115 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
                 </div>
               </button>
 
-              {/* 2. Data Master (sebelumnya: Verifikasi Pendaftaran) */}
-              <button
-                onClick={() => navigateTo('data_master')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'data_master' || activeMenu === 'verifikasi_pendaftaran'
-                    ? 'bg-amber-100 text-amber-900 font-bold border border-amber-300'
-                    : 'text-slate-700 hover:bg-amber-50/60'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span className="leading-snug break-words">Data Master</span>
-                </div>
-                {pendingCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
+              {/* 2. DATA MASTER (Collapsible Accordion with Submenus: Data Sekolah, Data Pengguna, Data Peserta) */}
+              <div className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    if (activeMenu !== 'data_master') {
+                      navigateTo('data_master', 'data_sekolah');
+                    }
+                    setDataMasterExpanded(!dataMasterExpanded);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
+                    activeMenu === 'data_master'
+                      ? 'bg-blue-50 text-blue-800 font-bold'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <Database className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span className="leading-snug break-words">Data Master</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {pendingCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
+                        {pendingCount}
+                      </span>
+                    )}
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                        dataMasterExpanded ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </div>
+                </button>
 
-              {/* 3. Data Peserta (sebelumnya: Satuan Pendidikan) */}
-              <button
-                onClick={() => navigateTo('data_peserta')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition ${
-                  activeMenu === 'data_peserta' || activeMenu === 'kelola_sekolah'
-                    ? 'bg-blue-50 text-blue-700 font-bold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <Users className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="leading-snug break-words">Data Peserta</span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-semibold">{students.length} Siswa</span>
-              </button>
+                {dataMasterExpanded && (
+                  <div className="pl-6 pr-1 py-1 space-y-1 border-l-2 border-blue-200 ml-4 my-0.5">
+                    {/* Submenu A: Data Sekolah */}
+                    <button
+                      onClick={() => navigateTo('data_master', 'data_sekolah')}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        activeMenu === 'data_master' && (activeSubMenu === 'data_sekolah' || activeSubMenu === 'schools' || !activeSubMenu)
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Building2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Data Sekolah</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-mono ${
+                          activeMenu === 'data_master' && (activeSubMenu === 'data_sekolah' || activeSubMenu === 'schools' || !activeSubMenu)
+                            ? 'text-blue-100 font-bold'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        {schools.length}
+                      </span>
+                    </button>
+
+                    {/* Submenu B: Data Pengguna */}
+                    <button
+                      onClick={() => navigateTo('data_master', 'data_pengguna')}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        activeMenu === 'data_master' && (activeSubMenu === 'data_pengguna' || activeSubMenu === 'users')
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Data Pengguna</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-mono ${
+                          activeMenu === 'data_master' && (activeSubMenu === 'data_pengguna' || activeSubMenu === 'users')
+                            ? 'text-blue-100 font-bold'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        {tenantStore.getProfiles().length}
+                      </span>
+                    </button>
+
+                    {/* Submenu C: Data Peserta */}
+                    <button
+                      onClick={() => navigateTo('data_master', 'data_peserta')}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-left transition ${
+                        activeMenu === 'data_master' && (activeSubMenu === 'data_peserta' || activeSubMenu === 'students')
+                          ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Users className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Data Peserta</span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-mono ${
+                          activeMenu === 'data_master' && (activeSubMenu === 'data_peserta' || activeSubMenu === 'students')
+                            ? 'text-blue-100 font-bold'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        {students.length}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* 4. Rekap dan Laporan (sebelumnya: Monitoring Ujian SINTESA) */}
               <button
@@ -457,12 +535,24 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({ onOpenSqlMod
             <TkaDashboardView onNavigate={(menu, sub) => navigateTo(menu, sub)} />
           )}
 
-          {(activeMenu === 'data_master' || activeMenu === 'verifikasi_pendaftaran') && (
+          {activeMenu === 'data_master' && (
+            <TkaDataMasterView
+              subTab={activeSubMenu || 'data_sekolah'}
+              onNavigate={(sub) => navigateTo('data_master', sub)}
+              onOpenSqlModal={onOpenSqlModal}
+            />
+          )}
+
+          {activeMenu === 'verifikasi_pendaftaran' && (
             <TkaVerifikasiPendaftaranView onSchoolApproved={() => {}} />
           )}
 
           {(activeMenu === 'data_peserta' || activeMenu === 'peserta') && (
-            <TkaDataPesertaView subTab={activeSubMenu || 'peserta'} />
+            <TkaDataMasterView
+              subTab="data_peserta"
+              onNavigate={(sub) => navigateTo('data_master', sub)}
+              onOpenSqlModal={onOpenSqlModal}
+            />
           )}
 
           {activeMenu === 'kelola_sekolah' && (
